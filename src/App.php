@@ -84,7 +84,7 @@ class App
             $args = [json_encode($options)];
         }
 
-        return $commandObj->invoke($this->config, $args);
+        return $commandObj->invoke($args);
     }
 
     private function getCommandOptions($command, $args)

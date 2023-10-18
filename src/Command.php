@@ -10,7 +10,7 @@ final class Command
             return null;
         }
         foreach ($config['scripts-dirs'] ?? [] as $dir) {
-            $command = self::createCommand($config['rootDir'], $dir, $name);
+            $command = self::createCommand($config, $dir, $name);
             if ($command !== null) {
                 return $command;
             }
@@ -24,7 +24,7 @@ final class Command
         foreach ($config['scripts-dirs'] ?? [] as $dir) {
             $names = self::listCommands($config['rootDir'], $dir);
             foreach ($names as $name) {
-                $command = self::createCommand($config['rootDir'], $dir, $name);
+                $command = self::createCommand($config, $dir, $name);
                 if ($command !== null) {
                     $commands[$name] = $command;
                 }
@@ -50,11 +50,11 @@ final class Command
         return $commands;
     }
 
-    private static function createCommand($rootDir, $dir, $name)
+    private static function createCommand($config, $dir, $name)
     {
-        $bin = Path::canonize($rootDir . "/" . $dir . "/" . $name);
+        $bin = Path::canonize($config['rootDir'] . "/" . $dir . "/" . $name);
         if (is_file($bin) && self::isInvokable($bin)) {
-            return new self($bin, $name);
+            return new self($bin, $name, $config);
         }
         return null;
     }
@@ -66,12 +66,14 @@ final class Command
 
     private $bin;
     private $name;
+    private $config;
     private $metadata;
 
-    private function __construct($bin, $name)
+    private function __construct($bin, $name, $config)
     {
         $this->bin = $bin;
         $this->name = $name;
+        $this->config = $config;
         $this->metadata = null;
     }
 
@@ -85,12 +87,12 @@ final class Command
         return $this->name;
     }
 
-    public function invoke($config, $args)
+    public function invoke($args)
     {
-        putenv("SPSO_APP_DIR=" . $config['rootDir']);
-        putenv("SPSO_APP_BIN=" . Path::canonize($config['rootDir'] . "/vendor/bin/app"));
-        if (isset($config['argv0'])) {
-            putenv("SPSO_APP_ARGV0=" . $config['argv0']);
+        putenv("SPSO_APP_DIR=" . $this->config['rootDir']);
+        putenv("SPSO_APP_BIN=" . Path::canonize($this->config['rootDir'] . "/vendor/bin/app"));
+        if (isset($this->config['argv0'])) {
+            putenv("SPSO_APP_ARGV0=" . $this->config['argv0']);
         }
 
         $cmd = escapeshellcmd($this->bin);
