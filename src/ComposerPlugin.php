@@ -51,7 +51,7 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
             if ($path !== null) {
                 $packageConfig = $this->loadDirsFromPackage($rootDir, $path, $package);
                 if ($packageConfig['scripts-dir'] !== null) {
-                    $runtimeConfig['scripts-dirs'][] = $packageConfig['scripts-dir'];
+                    $runtimeConfig['scripts-dirs'][$packageConfig['scripts-dir']] = $package;
                 }
             } else {
                 $this->io->writeError([

@@ -4,76 +4,16 @@ namespace SPSOstrov\AppConsole;
 
 final class Command
 {
-    public static function get($name, $config)
-    {
-        if (preg_match('-/-', $name)) {
-            return null;
-        }
-        foreach ($config['scripts-dirs'] ?? [] as $dir) {
-            $command = self::createCommand($config, $dir, $name);
-            if ($command !== null) {
-                return $command;
-            }
-        }
-        return null;
-    }
-
-    public static function getAll($config)
-    {
-        $commands = [];
-        foreach ($config['scripts-dirs'] ?? [] as $dir) {
-            $names = self::listCommands($config['rootDir'], $dir);
-            foreach ($names as $name) {
-                $command = self::createCommand($config, $dir, $name);
-                if ($command !== null) {
-                    $commands[$name] = $command;
-                }
-            }
-        }
-        ksort($commands);
-        return $commands;
-    }
-
-
-    private static function listCommands($rootDir, $dir)
-    {
-        $dd = @opendir($rootDir . "/" . $dir);
-        $commands = [];
-        if ($dd) {
-            while (($file = readdir($dd)) !== false) {
-                if ($file !== '.' && $file !== '..' && !preg_match('/\.json$/', $file)) {
-                    $commands[] = $file;
-                }
-            }
-            closedir($dd);
-        }
-        return $commands;
-    }
-
-    private static function createCommand($config, $dir, $name)
-    {
-        $bin = Path::canonize($config['rootDir'] . "/" . $dir . "/" . $name);
-        if (is_file($bin) && self::isInvokable($bin)) {
-            return new self($bin, $name, $config);
-        }
-        return null;
-    }
-
-    private static function isInvokable($bin)
-    {
-        return is_executable($bin) && !preg_match('/\.json$/', $bin);
-    }
-
     private $bin;
     private $name;
-    private $config;
+    private $envVars;
     private $metadata;
 
-    private function __construct($bin, $name, $config)
+    private function __construct($bin, $name, $envVars)
     {
         $this->bin = $bin;
         $this->name = $name;
-        $this->config = $config;
+        $this->envVars = $envVars;
         $this->metadata = null;
     }
 
@@ -89,10 +29,8 @@ final class Command
 
     public function invoke($args)
     {
-        putenv("SPSO_APP_DIR=" . $this->config['rootDir']);
-        putenv("SPSO_APP_BIN=" . Path::canonize($this->config['rootDir'] . "/vendor/bin/app"));
-        if (isset($this->config['argv0'])) {
-            putenv("SPSO_APP_ARGV0=" . $this->config['argv0']);
+        foreach ($this->envVars as $var => $value) {
+            putenv(sprintf("%s=%s", $var, $value));
         }
 
         $cmd = escapeshellcmd($this->bin);

@@ -9,6 +9,7 @@ use Exception;
 class App
 {
     private $config;
+    private $commandManager;
 
     public function __construct($composerAutoloadPath)
     {
@@ -16,12 +17,16 @@ class App
         $this->config = (new RuntimeConfig($rootDir))->get();
         $this->config['rootDir'] = $rootDir;
         $this->config['argv0'] = null;
+
+        $this->commandManager = null;
     }
 
     public function run($argv)
     {
         $this->config['argv0'] = $argv[0];
         array_shift($argv);
+        
+        $this->commandManager = new CommandManager($this->config);
 
         $getopt = $this->createGlobalGetOpt();
 
@@ -41,7 +46,7 @@ class App
             if ($command === null) {
                 $this->printGlobalHelp();
             } else {
-                $commandObj = Command::get($command, $this->config);
+                $commandObj = $this->commandManager->getCommand($command);
                 $this->printCommandHelp($commandObj);
             }
             return 1;
@@ -57,7 +62,7 @@ class App
             return 1;
         }
 
-        $commandObj = Command::get($command, $this->config);
+        $commandObj = $this->commandManager->getCommand($command);
 
         if ($commandObj === null) {
             fprintf(STDERR, "Unknown command: %s\n", $command);
@@ -111,7 +116,7 @@ class App
     {
         $descriptor = [];
         $maxLen = 0;
-        foreach (Command::getAll($this->config) as $name => $command) {
+        foreach ($this->commandManager->getAllCommands() as $name => $command) {
             $maxLen = max($maxLen, strlen($name));
             $descriptor[] = ["command" => $name, "spaces" => "", "description" => $command->getDescription()];
         }
