@@ -38,14 +38,14 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
     public function postAutoloadDump($object = null)
     {
         $runtimeConfig = ['scripts-dirs' => []];
-        $rootDir = Path::canonize(InstalledVersions::getInstallPath("__root__"));
+        $rootDir = Path::canonize($this->getPackagePath("__root__"));
         $packages = array_merge(
             ['__root__'],
             InstalledVersions::getInstalledPackagesByType('spsostrov-app-console'),
             [self::SELF_PACKAGE]
         );
         foreach ($packages as $package) {
-            $installPath = InstalledVersions::getInstallPath($package);
+            $installPath = $this->getPackagePath($package);
             $path = Path::canonize($installPath);
             $path = $this->stripPathPrefix($path, $rootDir);
             if ($path !== null) {
@@ -63,6 +63,20 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
             }
         }
         (new RuntimeConfig($rootDir))->set($runtimeConfig);
+    }
+
+    private function getRootDir()
+    {
+        return dirname($this->composer->getConfig()->get('vendor-dir'));
+    }
+
+    private function getPackagePath($package)
+    {
+        if ($package === '__root__') {
+            return $this->getRootDir();
+        } else {
+            return InstalledVersions::getInstallPath($package);
+        }
     }
 
     private function loadDirsFromPackage($rootDir, $packageDir, $package)

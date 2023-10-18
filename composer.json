@@ -17,7 +17,7 @@
     },
     "require": {
         "php": ">=7.1",
-        "composer-plugin-api": "^2.0",
+        "composer-plugin-api": "^2.1",
         "ulrichsg/getopt-php": "^4.0"
     },
     "bin": [
