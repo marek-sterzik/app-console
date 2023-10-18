@@ -62,6 +62,11 @@ final class Command
         return $this->metadata("description");
     }
 
+    public function getMetadataErrors()
+    {
+        return $this->metadata('errors') ?? [];
+    }
+
     public function transformArguments($options)
     {
         $resolver = $this->metadata("argumentResolver");
@@ -90,6 +95,7 @@ final class Command
         if (!MetaDataChecker::instance()->check($metaData)) {
             $metaData = [];
         }
+        $metaData['errors'] = MetaDataChecker::instance()->getLastErrors();
         return $metaData;
     }
 }

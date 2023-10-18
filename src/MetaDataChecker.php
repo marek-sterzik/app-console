@@ -21,8 +21,11 @@ class MetaDataChecker
         return static::$instance;
     }
 
+    private $errors = [];
+
     public function check(&$data)
     {
+        $this->errors = [];
         if (!is_array($data)) {
             $data = [];
         }
@@ -37,6 +40,16 @@ class MetaDataChecker
             }
         }
         return true;
+    }
+
+    public function getLastErrors()
+    {
+        return $this->errors;
+    }
+
+    private function error($message)
+    {
+        $this->errors[] = $message;
     }
 
     private function checkString(&$val)

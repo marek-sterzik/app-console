@@ -86,6 +86,10 @@ class App
 
     private function invokeCommand($command, $args)
     {
+        foreach ($command->getMetadataErrors() as $error) {
+            fprintf(STDERR, "Warning: invalid metadata: %s\n", $error);
+        }
+
         $options = $this->getCommandOptions($command, $args);
 
         if ($options['options']['help'] ?? false) {
