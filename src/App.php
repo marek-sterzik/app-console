@@ -127,8 +127,13 @@ class App
         $getopt = $this->createGlobalGetOpt();
         fprintf(STDERR, "Usage:\n  " . $this->config['argv0'] . " <command> [options] [args]\n\n");
         fprintf(STDERR, $getopt->getHelpText());
-        fprintf(STDERR, "Available commands:\n");
-        foreach ($this->createCommandsDescriptor() as $command) {
+        $commands = $this->createCommandsDescriptor();
+        if (!empty($commands)) {
+            fprintf(STDERR, "Available commands:\n");
+        } else {
+            fprintf(STDERR, "No commands are currently registered in the app console.\n");
+        }
+        foreach ($commands as $command) {
             if ($command['description'] !== null) {
                 fprintf(STDERR, "  %s%s  %s\n", $command['command'], $command['spaces'], $command['description']);
             } else {
