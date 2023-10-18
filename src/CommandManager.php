@@ -4,6 +4,7 @@ namespace SPSOstrov\AppConsole;
 
 class CommandManager
 {
+    const FORBIDDEN_EXTENSIONS = [".meta.php"];
     private $rootDir;
     private $scriptsDirs;
     private $envVars;
@@ -24,18 +25,31 @@ class CommandManager
         }
     }
 
-    public function getCommand($name)
+    public function getCommand($name, $package = null)
     {
+        $commands = $this->getCommands($name, $package, true);
+        return $commands[0] ?? null;
+    }
+
+    public function getCommands($name, $package = null, $firstOnly = false)
+    {
+        $commands = [];
         if (preg_match('-/-', $name)) {
-            return null;
+            return [];
         }
-        foreach ($this->scriptsDirs as $dir => $package) {
+        foreach ($this->scriptsDirs as $dir => $dirPackage) {
+            if ($package !== null && $package !== $dirPackage) {
+                continue;
+            }
             $command = $this->createCommand($dir, $name);
             if ($command !== null) {
-                return $command;
+                $commands[] = $command;
+                if ($firstOnly) {
+                    break;
+                }
             }
         }
-        return null;
+        return $commands;
     }
 
     public function getAllCommands()
@@ -60,13 +74,33 @@ class CommandManager
         $commands = [];
         if ($dd) {
             while (($file = readdir($dd)) !== false) {
-                if ($file !== '.' && $file !== '..' && !preg_match('/\.json$/', $file)) {
-                    $commands[] = $file;
+                if (substr($file, 0, 1) === '.' || $file === '') {
+                    continue;
                 }
+                if ($this->hasForbiddenExtension($file)) {
+                    continue;
+                }
+                $commands[] = $file;
             }
             closedir($dd);
         }
         return $commands;
+    }
+
+    private function hasForbiddenExtension($file)
+    {
+        $fl = strlen($file);
+        foreach (self::FORBIDDEN_EXTENSIONS as $ext) {
+            $el = strlen($ext);
+            if ($fl <= $el) {
+                continue;
+            }
+            if (substr($file, $fl - $el, $el) !== $ext) {
+                continue;
+            }
+            return true;
+        }
+        return false;
     }
 
     private function createCommand($dir, $name)

@@ -44,36 +44,32 @@ final class Command
 
     public function getHelp()
     {
-        return $this->metadataTyped("help", "is_string");
+        return $this->metadata("help");
     }
 
     public function getOptions()
     {
-        return $this->metadataTyped("options", "is_array") ?? [];
+        return $this->metadata("options") ?? [];
     }
 
     public function getOperands()
     {
-        return $this->metadataTyped("operands", "is_array") ?? [];
+        return $this->metadata("operands") ?? [];
     }
 
     public function getDescription()
     {
-        return $this->metadataTyped("description", "is_string");
+        return $this->metadata("description");
     }
 
-    public function getPassArgsAsJson()
+    public function transformArguments($options)
     {
-        return $this->metadata('passArgsAsJson') ? true : false;
-    }
-
-    private function metadataTyped($key, $type)
-    {
-        $data = $this->metadata($key);
-        if ($type($data)) {
-            return $data;
+        $resolver = $this->metadata("argumentResolver");
+        if ($resolver === null) {
+            return $options['arguments'];
+        } else {
+            return $resolver($options);
         }
-        return null;
     }
 
     private function metadata($key)
@@ -86,14 +82,14 @@ final class Command
 
     private function loadMetadata()
     {
-        $data = @file_get_contents($this->bin . ".json");
-        if (!is_string($data)) {
+        $metaFile = $this->bin . ".meta.php";
+        if (!file_exists($metaFile)) {
             return [];
         }
-        $data = @json_decode($data, true);
-        if (!is_array($data)) {
-            return [];
+        $metaData = @include $metaFile;
+        if (!MetaDataChecker::check($metaData)) {
+            $metaData = [];
         }
-        return $data;
+        return $metaData;
     }
 }

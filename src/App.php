@@ -62,17 +62,34 @@ class App
             return 1;
         }
 
-        $commandObj = $this->commandManager->getCommand($command);
+        $commands = $this->commandManager->getCommands($command, null, true);
 
-        if ($commandObj === null) {
+        if (empty($commands)) {
             fprintf(STDERR, "Unknown command: %s\n", $command);
             return 1;
         }
+        
+        $finalRet = 0;
+        foreach ($commands as $commandObj) {
+            $ret = $this->invokeCommand($commandObj);
+            if ($ret !== 0) {
+                if ($finalRet === 0 || $finalRet === $ret) {
+                    $finalRet = $ret;
+                } else {
+                    $finalRet = 1;
+                }
+            }
+        }
 
-        $options = $this->getCommandOptions($commandObj, $args);
+        return $finalRet;
+    }
+
+    private function invokeCommand($command)
+    {
+        $options = $this->getCommandOptions($command, $args);
 
         if ($options['options']['help'] ?? false) {
-            $this->printCommandHelp($commandObj);
+            $this->printCommandHelp($command);
             return 1;
         }
 
@@ -81,15 +98,9 @@ class App
             return 1;
         }
 
-        if ($commandObj->getPassArgsAsJson()) {
-            if ($options === null) {
-                fprintf(STDERR, "Cannot parse options.\n");
-                return 1;
-            }
-            $args = [json_encode($options)];
-        }
+        $args = $command->transformArguments($options);
 
-        return $commandObj->invoke($args);
+        return $command->invoke($args);
     }
 
     private function getCommandOptions($command, $args)
@@ -109,6 +120,7 @@ class App
             $namedOperands[$name] = $getopt->getOperand($name);
         }
         $data['namedOperands'] = $namedOperands;
+        $data['arguments'] = $args;
         return $data;
     }
 
