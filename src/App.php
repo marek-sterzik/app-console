@@ -34,7 +34,7 @@ class App
         try {
             $getopt->process($argv);
         } catch (Exception $e) {
-            fprintf(STDERR, "Error: Cannot parse options.\n");
+            fprintf(STDERR, "Error: Cannot parse options: %s\n", $e->getMessage());
             fprintf(STDERR, "For help use: %s --help\n", $this->config['argv0']);
             return 1;
         }
