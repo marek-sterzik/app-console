@@ -1,0 +1,29 @@
+{
+    "name": "spsostrov/runtime",
+    "description": "The SPŠ Ostrov Runtime package",
+    "license": "MIT",
+    "homepage": "https://github.com/marek-sterzik/spsostrov-runtime",
+    "type": "composer-plugin",
+    "authors": [
+        {
+            "name": "Marek Sterzik",
+            "email": "sterzik@spsostrov.cz"
+        }
+    ],
+    "autoload" : {
+        "psr-4": {
+            "SPSOstrov\\Runtime\\": "src"
+        }
+    },
+    "require": {
+        "php": ">=7.1",
+        "composer-plugin-api": "^2.0",
+        "ulrichsg/getopt-php": "^4.0"
+    },
+    "bin": [
+        "bin/app"
+    ],
+    "extra": {
+        "class": "SPSOstrov\\Runtime\\ComposerPlugin"
+    }
+}

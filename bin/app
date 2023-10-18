@@ -1,0 +1,15 @@
+#!/usr/bin/env php
+<?php
+
+use SPSOstrov\Runtime\App;
+
+if (!isset($_composer_autoload_path)) {
+    fprintf(STDERR, "Warning: Running app in test mode.\n");
+    $_composer_autoload_path = dirname(__DIR__) . "/vendor/autoload.php";
+}
+
+include $_composer_autoload_path;
+
+$app = new App($_composer_autoload_path);
+exit($app->run($argv));
+
