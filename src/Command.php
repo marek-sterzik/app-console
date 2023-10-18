@@ -9,7 +9,7 @@ final class Command
     private $envVars;
     private $metadata;
 
-    private function __construct($bin, $name, $envVars)
+    public function __construct($bin, $name, $envVars)
     {
         $this->bin = $bin;
         $this->name = $name;

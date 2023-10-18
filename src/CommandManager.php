@@ -11,7 +11,7 @@ class CommandManager
     public function __construct($config)
     {
         $this->rootDir = $config['rootDir'];
-        $this->scriptsDirs = $config['scriptsDirs'] ?? [];
+        $this->scriptsDirs = $config['scripts-dirs'] ?? [];
         $this->envVars = [
             "SPSO_APP_DIR" => $this->rootDir,
             "SPSO_APP_BIN" => $this->rootDir . "/vendor/bin/app",
