@@ -1,8 +1,8 @@
 {
-    "name": "spsostrov/runtime",
-    "description": "The SPŠ Ostrov Runtime package",
+    "name": "spsostrov/app-console",
+    "description": "The SPŠ Ostrov App Console Framework",
     "license": "MIT",
-    "homepage": "https://github.com/marek-sterzik/spsostrov-runtime",
+    "homepage": "https://github.com/marek-sterzik/app-console",
     "type": "composer-plugin",
     "authors": [
         {
@@ -12,7 +12,7 @@
     ],
     "autoload" : {
         "psr-4": {
-            "SPSOstrov\\Runtime\\": "src"
+            "SPSOstrov\\AppConsole\\": "src"
         }
     },
     "require": {
@@ -24,6 +24,6 @@
         "bin/app"
     ],
     "extra": {
-        "class": "SPSOstrov\\Runtime\\ComposerPlugin"
+        "class": "SPSOstrov\\AppConsole\\ComposerPlugin"
     }
 }

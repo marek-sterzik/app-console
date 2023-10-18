@@ -1,6 +1,6 @@
 <?php
 
-namespace SPSOstrov\Runtime;
+namespace SPSOstrov\AppConsole;
 use GetOpt\GetOpt;
 use GetOpt\Option;
 use GetOpt\Operand;

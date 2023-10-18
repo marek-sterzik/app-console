@@ -1,6 +1,6 @@
 <?php
 
-namespace SPSOstrov\Runtime;
+namespace SPSOstrov\AppConsole;
 
 use Composer\Composer;
 use Composer\IO\IOInterface;

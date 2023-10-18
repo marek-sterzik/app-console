@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-use SPSOstrov\Runtime\App;
+use SPSOstrov\AppConsole\App;
 
 if (!isset($_composer_autoload_path)) {
     fprintf(STDERR, "Warning: Running app in test mode.\n");
