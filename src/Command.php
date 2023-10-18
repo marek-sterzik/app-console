@@ -87,7 +87,7 @@ final class Command
             return [];
         }
         $metaData = @include $metaFile;
-        if (!MetaDataChecker::check($metaData)) {
+        if (!MetaDataChecker::instance()->check($metaData)) {
             $metaData = [];
         }
         return $metaData;
