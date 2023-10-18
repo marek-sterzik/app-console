@@ -71,7 +71,7 @@ class App
         
         $finalRet = 0;
         foreach ($commands as $commandObj) {
-            $ret = $this->invokeCommand($commandObj);
+            $ret = $this->invokeCommand($commandObj, $args);
             if ($ret !== 0) {
                 if ($finalRet === 0 || $finalRet === $ret) {
                     $finalRet = $ret;
@@ -84,7 +84,7 @@ class App
         return $finalRet;
     }
 
-    private function invokeCommand($command)
+    private function invokeCommand($command, $args)
     {
         $options = $this->getCommandOptions($command, $args);
 
