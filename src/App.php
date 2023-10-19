@@ -1,9 +1,7 @@
 <?php
 
 namespace SPSOstrov\AppConsole;
-use GetOpt\GetOpt;
-use GetOpt\Option;
-use GetOpt\Operand;
+use SPSOstrov\GetOpt\Options;
 use Exception;
 
 class App
@@ -32,17 +30,16 @@ class App
 
 
         try {
-            $getopt->process($argv);
+            $options = $getopt->parseArgs($argv);
         } catch (Exception $e) {
             fprintf(STDERR, "Error: Cannot parse options: %s\n", $e->getMessage());
             fprintf(STDERR, "For help use: %s --help\n", $this->config['argv0']);
             return 1;
         }
-        $options = $getopt->getOptions();
-        $command = $getopt->getOperand('command');
-        $args = $getopt->getOperand('args');
+        $command = $options['command'] ?? null;
+        $args = $options['args'] ?? [];
 
-        if ($options['help'] ?? false) {
+        if ($options['__help__'] ?? false) {
             if ($command === null) {
                 $this->printGlobalHelp();
             } else {
@@ -52,7 +49,7 @@ class App
             return 1;
         }
 
-        if ($options['version'] ?? false) {
+        if ($options['__version__'] ?? false) {
             $this->printVersionInfo();
             return 1;
         }
@@ -92,12 +89,12 @@ class App
 
         $options = $this->getCommandOptions($command, $args);
 
-        if ($options['options']['help'] ?? false) {
+        if ($options['options']['__help__'] ?? false) {
             $this->printCommandHelp($command);
             return 1;
         }
 
-        if ($options['options']['version'] ?? false) {
+        if ($options['options']['__version__'] ?? false) {
             $this->printVersionInfo();
             return 1;
         }
@@ -111,19 +108,12 @@ class App
     {
         $getopt = $this->createCommandGetOpt($command, true);
         try {
-            $getopt->process($args);
+            $options = $getopt->arseArgs($args);
         } catch (Exception $e) {
             return null;
         }
         $data = [];
-        $data['options'] = $getopt->getOptions();
-        $data['operands'] = $getopt->getOperands();
-        $namedOperands = [];
-        foreach ($command->getOperands() as $op) {
-            $name = $op[0];
-            $namedOperands[$name] = $getopt->getOperand($name);
-        }
-        $data['namedOperands'] = $namedOperands;
+        $data['options'] = $options;
         $data['arguments'] = $args;
         return $data;
     }
@@ -145,9 +135,7 @@ class App
 
     private function printGlobalHelp()
     {
-        $getopt = $this->createGlobalGetOpt();
         fprintf(STDERR, "Usage:\n  " . $this->config['argv0'] . " <command> [options] [args]\n\n");
-        fprintf(STDERR, $getopt->getHelpText());
         $commands = $this->createCommandsDescriptor();
         if (!empty($commands)) {
             fprintf(STDERR, "Available commands:\n");
@@ -171,8 +159,6 @@ class App
         if ($description !== null) {
             fprintf(STDERR, "\n$description\n\n");
         }
-        $getopt = $this->createCommandGetOpt($command, false);
-        fprintf(STDERR, $getopt->getHelpText());
         $help = $command->getHelp();
         if ($help !== null) {
             fprintf(STDERR, "$help\n");
@@ -187,98 +173,27 @@ class App
     private function getControlOpts()
     {
         return [
-            ["h", "help", "no", "Show help"],
-            ["v", "version", "no", "Show version"]
+            'h|help[__help__] Show help',
+            'v|version[__version__] Show version',
+            '$command? Command to be called',
+            '$args* Command arguments',
         ];
-    }
-
-    private function getControlOperands()
-    {
-        return [
-            ['command', 'optional'],
-            ['args', 'multiple']
-        ];
-    }
-
-    private function createOption($descriptor)
-    {
-        switch ($descriptor[2]) {
-            case 'no':
-                $type = GetOpt::NO_ARGUMENT;
-                break;
-            case 'required':
-                $type = GetOpt::REQUIRED_ARGUMENT;
-                break;
-            case 'optional':
-                $type = GetOpt::OPTIONAL_ARGUMENT;
-                break;
-            case 'multiple':
-                $type = GetOpt::MULTIPLE_ARGUMENT;
-                break;
-            default:
-                return null;
-        }
-        $option = Option::create($descriptor[0], $descriptor[1], $type);
-        $description = $descriptor[3] ?? null;
-        if ($description !== null) {
-            $option = $option->setDescription($description);
-        }
-        return $option;
-    }
-
-    private function createOperand($descriptor)
-    {
-        switch ($descriptor[1]) {
-            case 'required':
-                $type = Operand::REQUIRED;
-                break;
-            case 'optional':
-                $type = Operand::OPTIONAL;
-                break;
-            case 'multiple':
-                $type = Operand::MULTIPLE;
-                break;
-            default:
-                return null;
-        }
-        $operand = Operand::create($descriptor[0], $type);
-        return $operand;
     }
 
     private function createGlobalGetOpt()
     {
-        return $this->createGetOpt($this->getControlOpts(), $this->getControlOperands());
+        return new Options($this->getControlOpts());
     }
 
     private function createCommandGetOpt($command, $mergeControl)
     {
         $options = $command->getOptions();
+        $options = new Options($options);
         if ($mergeControl) {
-            $options = array_merge($this->getControlOpts(), $options);
-        }
-        return $this->createGetOpt($options, $command->getOperands());
-    }
-
-    private function createGetOpt($opts, $operands = [])
-    {
-        $realOpts = [];
-        foreach ($opts as $opt) {
-            $opt = $this->createOption($opt);
-            if ($opt !== null) {
-                $realOpts[] = $opt;
+            foreach ($this->getControlOpts() as $option) {
+                $options->registerOption($option, false);
             }
         }
-
-        $realOperands = [];
-        foreach ($operands as $operand) {
-            $operand = $this->createOperand($operand);
-            if ($operand !== null) {
-                $realOperands[] = $operand;
-            }
-        }
-        $getopt = new GetOpt($realOpts);
-        $getopt->addOperands($realOperands);
-        $getopt->getHelp()->setUsageTemplate(__DIR__ . "/../usage-template.php");
-        return $getopt;
+        return $options;
     }
 }

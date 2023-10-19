@@ -2,11 +2,13 @@
 
 namespace SPSOstrov\AppConsole;
 
+use SPSOstrov\GetOpt\Options;
+use Exception;
+
 class MetaDataChecker
 {
     const CHECKS = [
         "description" => "checkString",
-        "operands" => "checkOperands",
         "options" => "checkOptions",
         "help" => "checkString",
         "argumentResolver" => "checkArgumentResolver",
@@ -63,17 +65,19 @@ class MetaDataChecker
         return true;
     }
 
-    private function checkOperands(&$val)
+    private function checkOptions(&$val)
     {
         if (!is_array($val)) {
             return false;
         }
-        return true;
-    }
-
-    private function checkOptions(&$val)
-    {
-        if (!is_array($val)) {
+        foreach ($val as $opt) {
+            if (!is_string($opt)) {
+                return false;
+            }
+        }
+        try {
+            new Options($val);
+        } catch (Exception $e) {
             return false;
         }
         return true;
