@@ -87,35 +87,28 @@ class App
             fprintf(STDERR, "Warning: invalid metadata: %s\n", $error);
         }
 
-        $options = $this->getCommandOptions($command, $args);
-
-        if ($options['options']['__help__'] ?? false) {
-            $this->printCommandHelp($command);
-            return 1;
-        }
-
-        if ($options['options']['__version__'] ?? false) {
-            $this->printVersionInfo();
-            return 1;
-        }
-
-        $args = $command->transformArguments($options);
-
-        return $command->invoke($args);
-    }
-
-    private function getCommandOptions($command, $args)
-    {
         $getopt = $this->createCommandGetOpt($command, true);
         try {
             $options = $getopt->parseArgs($args);
         } catch (Exception $e) {
-            return null;
+            fprintf(STDERR, "Error: Cannot parse options: %s\n", $e->getMessage());
+            fprintf(STDERR, "For help use: %s %s --help\n", $this->config['argv0'], $command->getName());
+            return 1;
         }
-        $data = [];
-        $data['options'] = $options;
-        $data['arguments'] = $args;
-        return $data;
+
+        if ($options['__help__'] ?? false) {
+            $this->printCommandHelp($command);
+            return 1;
+        }
+
+        if ($options['__version__'] ?? false) {
+            $this->printVersionInfo();
+            return 1;
+        }
+
+        $args = $command->transformArguments($options, $args);
+
+        return $command->invoke($args);
     }
 
     private function createCommandsDescriptor()

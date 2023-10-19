@@ -67,13 +67,13 @@ final class Command
         return $this->metadata('errors') ?? [];
     }
 
-    public function transformArguments($options)
+    public function transformArguments($options, $arguments)
     {
         $resolver = $this->metadata("argumentResolver");
         if ($resolver === null) {
             return $options['arguments'];
         } else {
-            return $resolver($options);
+            return $resolver($options, $arguments);
         }
     }
 
