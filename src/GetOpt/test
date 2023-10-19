@@ -1,0 +1,37 @@
+#!/usr/bin/env php
+<?php
+
+namespace SPSOstrov\AppConsole\GetOpt;
+
+require __DIR__ . "/OptionTokenizer.php";
+require __DIR__ . "/OptionParser.php";
+require __DIR__ . "/ParserException.php";
+require __DIR__ . "/Option.php";
+require __DIR__ . "/Options.php";
+require __DIR__ . "/ArgsTokenizer.php";
+require __DIR__ . "/ArgsParser.php";
+require __DIR__ . "/ArgsException.php";
+
+array_shift($argv);
+
+$options = [
+    'a|append              append commit',
+    'm|message:            commit message',
+    'o|optional?           optional argument',
+    'A|array*              array argument',
+    'yes|no{1}[enabled=@]  enable',
+    '$command:             command',
+    '$args{3}              command-args',
+];
+
+foreach ($options as $option) {
+    echo $option."\n";
+}
+echo "\n";
+
+$options = new Options($options);
+$options->setStrictMode(true);
+
+$parsed = $options->parseArgs($argv);
+echo "----------------------------------------\n";
+var_dump($parsed);

@@ -14,7 +14,7 @@ class OptionParser
     public function parse(string $options): array
     {
         $this->initialize($options);
-
+        $this->loadIsArgument();
         $this->merge($this->loadOptionList());
         $this->loadByTypeMultiple([
             '{' => 'loadQuantity',
@@ -50,6 +50,17 @@ class OptionParser
     private function merge(array $data): void
     {
         $this->data = array_merge($this->data, $data);
+    }
+
+    private function loadIsArgument(): void
+    {
+        $token = $this->readToken(false);
+        $isArgument = false;
+        if ($token !== null && $token[0] === '$') {
+            $isArgument = true;
+            $this->readToken();
+        }
+        $this->merge(['isArgument' => $isArgument]);
     }
 
     private function loadWriteRule(): array
@@ -203,7 +214,7 @@ class OptionParser
         $this->merge(["argType" => $argType]);
     }
 
-    private function loadQuantity()
+    private function loadQuantity(): void
     {
         $this->setErrorPosition();
         $token = $this->readToken(false);
@@ -215,31 +226,37 @@ class OptionParser
         if ($min === null && $token[0] !== ',') {
             $this->unexpectedToken($token);
         }
-        if ($min !== null || $token[0] !== ',') {
+
+        if ($min !== null || ($token[0] !== ',')) {
             $token = $this->readNextToken();
         }
         if ($min === null) {
             $min = 0;
         }
-        if ($token === null || ($token[0] !== '}' && $token[0] !== ',')) {
-            $this->unexpectedToken($token);
-        }
 
-        $max = null;
+        if ($token[0] !== '}') {
+            if ($token === null || ($token[0] !== '}' && $token[0] !== ',')) {
+                $this->unexpectedToken($token);
+            }
 
-        if ($token[0] === ',') {
-            $token = $this->readNextToken();
-            $max = $this->tokenToNum($token);
-            if ($max === null) {
+            $max = null;
+
+            if ($token[0] === ',') {
+                $token = $this->readNextToken();
+                $max = $this->tokenToNum($token);
+                if ($max === null) {
+                    if ($token === null || $token[0] !== '}') {
+                        $this->unexpectedToken($token);
+                    }
+                } else {
+                    $token = $this->readNextToken();
+                }
                 if ($token === null || $token[0] !== '}') {
                     $this->unexpectedToken($token);
                 }
-            } else {
-                $token = $this->readNextToken();
             }
-            if ($token === null || $token[0] !== '}') {
-                $this->unexpectedToken($token);
-            }
+        } else {
+            $max = $min;
         }
 
         $this->readToken();
@@ -286,7 +303,6 @@ class OptionParser
             'long' => [],
             'identifier' => [],
             'special' => [],
-            'argument' => [],
         ];
         $token = $this->readToken(false);
         while ($token !== null) {
@@ -330,17 +346,6 @@ class OptionParser
                 }
             }
         }
-        if (count($options['argument']) > 1) {
-            $this->error("Invalid option list");
-        }
-        if (!empty($options['argument'])) {
-            if (!empty($options['long']) || !empty($options['short'])) {
-                $this->error("Invalid option list");
-            }
-            $options['long'] = null;
-            $options['short'] = null;
-        }
-        unset($options['argument']);
         return $options;
     }
 
@@ -390,8 +395,6 @@ class OptionParser
             return 'identifier';
         } elseif ($token[0] === '@') {
             return 'special';
-        } elseif ($token[0] === '$') {
-            return 'argument';
         } else {
             return null;
         }

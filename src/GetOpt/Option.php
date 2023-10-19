@@ -12,13 +12,16 @@ class Option
     /** @var int */
     private static $idCounter = 0;
 
-    /** @var imt */
+    /** @var int */
     private $id;
 
-    /** @var string[]|null */
+    /** @var bool */
+    private $isArgument;
+
+    /** @var string[] */
     private $short;
 
-    /** @var string[]|null */
+    /** @var string[] */
     private $long;
 
     /** @var string */
@@ -44,39 +47,53 @@ class Option
     {
         $this->id = ++static::$idCounter;
         $decoded = (new OptionParser())->parse($optionDescription);
+        $this->isArgument = $decoded['isArgument'];
         $this->short = $decoded['short'];
         $this->long = $decoded['long'];
         $this->argType = $decoded['argType'] ?? null;
         $this->min = $decoded['min'] ?? null;
         $this->max = $decoded['max'] ?? null;
         $this->checker = $decoded['checker'] ?? null;
-        $this->rules = $decoded['rules'] ?? [['from' => '$', 'to' => ['@@', '@'], 'type' => '$']];
+        $this->rules = $decoded['rules'] ?? [['from' => '$', 'to' => ['@@@'], 'type' => '$']];
         $this->description = $decoded['description'] ?? null;
-
-        if ($this->short !== null) {
-            sort($this->short);
-        }
-        if ($this->long !== null) {
-            sort($this->long);
-        }
 
         if ($this->argType === null) {
             if ($this->min === null && $this->max === null) {
-                $this->argType = self::ARG_NONE;
+                if ($this->isArgument()) {
+                    $this->argType = self::ARG_REQUIRED;
+                } else {
+                    $this->argType = self::ARG_NONE;
+                }
             } elseif ($this->max === null || $this->max > 1) {
                 $this->argType = self::ARG_ARRAY;
             } else {
-                $this->argType = self::ARG_REQUIRED;
+                $this->argType = self::ARG_NONE;
             }
         }
 
         if ($this->min === null) {
-            $this->min = 0;
-            if ($this->argType === self::ARG_ARRAY) {
-                $this->max = null;
+            if ($this->isArgument()) {
+                if ($this->argType === self::ARG_ARRAY) {
+                    $this->min = 0;
+                    $this->max = null;
+                } elseif ($this->argType === self::ARG_OPTIONAL) {
+                    $this->min = 0;
+                    $this->max = 1;
+                } elseif ($this->argType === self::ARG_REQUIRED) {
+                    $this->min = 1;
+                    $this->max = 1;
+                } else {
+                    $this->min = 0;
+                    $this->max = 0;
+                }
             } else {
-                $this->max = 1;
-            }
+                $this->min = 0;
+                if ($this->argType === self::ARG_ARRAY) {
+                    $this->max = null;
+                } else {
+                    $this->max = 1;
+                }
+            } 
         }
 
         if ($this->description !== null) {
@@ -105,7 +122,7 @@ class Option
 
     public function isArgument(): bool
     {
-        return $this->short === null || $this->long === null;
+        return $this->isArgument;
     }
 
     public function getShort(): array
@@ -123,6 +140,16 @@ class Option
         return array_merge($this->short, $this->long);
     }
 
+    public function getMin(): int
+    {
+        return $this->min;
+    }
+
+    public function getMax(): ?int
+    {
+        return $this->max;
+    }
+
     public function getArgType(): string
     {
         return $this->argType;
@@ -133,12 +160,8 @@ class Option
         $remover = function($item) use ($option) {
             return $item !== $option;
         };
-        if ($this->short !== null) {
-            $this->short = array_filter($this->short, $remover);
-        }
-        if ($this->long !== null) {
-            $this->long = array_filter($this->long, $remover);
-        }
+        $this->short = array_filter($this->short, $remover);
+        $this->long = array_filter($this->long, $remover);
     }
 
     public function getChecker(): ?string
@@ -154,5 +177,50 @@ class Option
     public function useArrayWrite(): bool
     {
         return in_array($this->argType, [self::ARG_ARRAY]);
+    }
+
+    public function getRepresentative(bool $decorate = false): ?string
+    {
+        if (!empty($this->long)) {
+            $representative = $this->long[0];
+        } elseif (!empty($this->short)) {
+            $representative = $this->short[0];
+        } else {
+            return null;
+        }
+        if ($decorate) {
+            $representative = $this->decorateOption($representative);
+        }
+        return $representative;
+    }
+
+    public function getRepresentatives(bool $decorate = false): ?string
+    {
+        if (!empty($this->long)) {
+            $representatives = $this->long;
+        } elseif (!empty($this->short)) {
+            $representatives = $this->short;
+        } else {
+            return null;
+        }
+        if ($decorate) {
+            $representatives = array_map(function ($name) {
+                return $this->decorateOption($name);
+            }, $representatives);
+        }
+        return implode(", ", $representatives);
+    }
+
+    private function decorateOption(string $name): string
+    {
+        if ($this->isArgument()) {
+            return '<' . $name . '>';
+        } else {
+            if (strlen($name) <= 1) {
+                return '-' . $name;
+            } else {
+                return '--' . $name;
+            }
+        }
     }
 }

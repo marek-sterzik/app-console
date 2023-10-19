@@ -26,27 +26,66 @@ class ArgsParser
     {
         $this->data = [];
         $this->statistics = [];
+        $nArg = 0;
         foreach ($this->tokenizer->tokenize($args) as $token) {
             if ($token[0] === 'error') {
                 throw new ArgsException($token[1], $token[3]);
             } elseif ($token[0] === 'option') {
-                $this->processOption($token[1], $token[2], $token[3]);
+                $option = $this->options->getOptionFor($token[1]);
+                if ($option === null) {
+                    throw new ArgsException("ArgsParser Bug!");
+                }
+                $this->processOption($option, $token[1], $token[2]);
             } elseif ($token[0] === 'arg') {
-                $this->processArg($token[1], $token[3]);
+                $option = $this->options->getOptionForArg($nArg++);
+                if ($option === null) {
+                    throw new ArgsException("Unexpected argument");
+                }
+                $this->processOption($option, null, $token[1]);
             } else {
                 throw new ArgsException("ArgsParser Bug!", $token[3]);
             }
         }
+        $this->checkLimits();
         return $this->data;
     }
 
-    private function processOption(string $option, ?string $optArg, int $argNumber): void
+    private function checkLimits(): void
     {
-        $option = $this->options->getOptionFor($option);
-        if ($option === null) {
-            throw new ArgsException("ArgsParser Bug!", $argNumber);
+        foreach ($this->options->getAll() as $option) {
+            $count = $this->statistics[$option->id()] ?? 0;
+            $optionName = $option->getRepresentatives(true) ?? '<unknown>';
+            $type = $option->isArgument() ? 'argument' : 'option';
+            $message = null;
+            if ($count < $option->getMin()) {
+                if ($option->getMin() > 1) {
+                    $note = sprintf(" (at least %d required)", $option->getMin());
+                } else {
+                    $note = "";
+                }
+                if ($count === 0) {
+                    $message = sprintf("Missing %s %s%s", $type, $optionName, $note);
+                } else {
+                    $message = sprintf("Too few %ss %s%s", $type, $optionName, $note);
+                }
+            } elseif ($option->getMax() !== null && $option->getMax() < $count) {
+                if ($option->getMax() > 1) {
+                    $message = sprintf("Too many %ss %s (only %d options allowed)", $type, $optionName, $option->getMax());
+                } elseif ($option->getMax() < 1) {
+                    $message = sprintf("Using %s %s is forbidden", $type, $optionName);
+                } else {
+                    $message = sprintf("Using %s %s is allowed only once", $type, $optionName);
+                }
+            }
+            if ($message !== null) {
+                throw new ArgsException($message);
+            }
         }
-        if ($option->hasArgument()) {
+    }
+
+    private function processOption(Option $option, ?string $optionNameUsed, ?string $optArg): void
+    {
+        if ($option->isArgument() || $option->hasArgument()) {
             $value = $optArg;
         } else {
             $value = true;
@@ -54,16 +93,16 @@ class ArgsParser
         $this->checkValue($value, $option->getChecker());
         $arrayWrite = $option->useArrayWrite();
         foreach ($option->getRules() as $rule) {
-            $valueToWrite = $this->createValue($option, $rule, $value);
+            $valueToWrite = $this->createValue($option, $optionNameUsed, $rule, $value);
             foreach ($rule['to'] as $key) {
-                $this->writeValue($option, $key, $value, $arrayWrite);
+                $this->writeValue($option, $key, $valueToWrite, $arrayWrite);
             }
         }
         $id = $option->id();
         $this->statistics[$id] = ($this->statistics[$id] ?? 0) + 1;
     }
 
-    private function createValue(Option $option, array $rule, $value)
+    private function createValue(Option $option, ?string $optionNameUsed, array $rule, $value)
     {
         $type = $rule['type'];
         $from = $rule['from'];
@@ -81,19 +120,15 @@ class ArgsParser
             case 'const':
                 return $from;
             case '@':
-                if ($from === '@') {
-                    $data = $option->getShort();
-                } elseif ($from === '@@') {
-                    $data = $option->getLong();
-                } elseif ($from === '@@@') {
-                    $data = $option->getAll();
+                if ($from === '@' || $from === '@@') {
+                    if ($optionNameUsed !== null) {
+                        return $optionNameUsed;
+                    } else {
+                        return $option->getRepresentative();
+                    }
                 } else {
-                    $data = [];
+                    return implode("|", $option->getAll());
                 }
-                if (empty($data)) {
-                    return null;
-                }
-                return implode("|", $data);
             case '$':
                 return $value;
             default:

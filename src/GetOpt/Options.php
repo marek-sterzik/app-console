@@ -16,6 +16,9 @@ class Options
     /** @var bool */
     private $strictMode = true;
 
+    /** @var array */
+    private $argCache = null;
+
     public function __construct(array $options, bool $strictMode = true)
     {
         $this->strictMode = $strictMode;
@@ -87,6 +90,51 @@ class Options
         return $option->getArgType();
     }
 
+    public function getOptionForArg(int $argNumber): ?Option
+    {
+        if ($argNumber < 0) {
+            return null;
+        }
+        $initCache = [
+            "n" => 0,
+            "oi" => 0,
+        ];
+        if ($this->argCache === null) {
+            $this->argCache = $initCache;
+        }
+        while ($this->argCache["n"] > $argNumber && $this->argCache['oi'] > 0) {
+            $this->argCache['oi']--;
+            $option = $this->argMap[$this->argCache['oi']] ?? null;
+            if ($option === null) {
+                $this->argCache = $initCache;
+                break;
+            }
+            $max = $option->getMax();
+            if ($max === null || $max > $this->argCache['n']) {
+                $this->argCache = $initCache;
+                break;
+            }
+            $this->argCache['n'] -= $max;
+        }
+        if (($this->argCache['n'] == 0) !== ($this->argCache['oi'] == 0)) {
+            $this->argCache = $initCache;
+        }
+        while ($this->argCache['oi'] < count($this->argMap)) {
+            $option = $this->argMap[$this->argCache['oi']] ?? null;
+            if ($option === null) {
+                return null;
+            }
+            $max = $option->getMax();
+            if ($max === null || $max > $argNumber - $this->argCache['n']) {
+                return $option;
+            }
+            $this->argCache['oi']++;
+            $this->argCache['n'] += $max;
+            
+        }
+        return null;
+    }
+
     public function getOptionFor(string $option): ?Option
     {
         if ($option === '') {
@@ -107,5 +155,10 @@ class Options
         }
         $parser = new ArgsParser($this);
         return $parser->parse($args);
+    }
+
+    public function getAll(): array
+    {
+        return $this->options;
     }
 }
