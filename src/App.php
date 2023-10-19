@@ -108,7 +108,7 @@ class App
     {
         $getopt = $this->createCommandGetOpt($command, true);
         try {
-            $options = $getopt->arseArgs($args);
+            $options = $getopt->parseArgs($args);
         } catch (Exception $e) {
             return null;
         }
