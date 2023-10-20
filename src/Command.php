@@ -69,11 +69,12 @@ final class Command
 
     public function transformArguments($options, $arguments)
     {
-        $resolver = $this->metadata("argumentResolver");
-        if ($resolver === null) {
-            return $options['arguments'];
+        $argsDescriptor = $this->metadata("args");
+        if ($argsDescriptor === null) {
+            return $arguments;
         } else {
-            return $resolver($options, $arguments);
+            $paramsConverter = new ParamsConverter($argsDescriptor);
+            return $paramsConverter->getArgs($options, $arguments);
         }
     }
 

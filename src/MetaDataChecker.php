@@ -11,7 +11,7 @@ class MetaDataChecker
         "description" => "checkString",
         "options" => "checkOptions",
         "help" => "checkString",
-        "argumentResolver" => "checkArgumentResolver",
+        "args" => "checkArgs",
     ];
     private static $instance = null;
 
@@ -83,10 +83,15 @@ class MetaDataChecker
         return true;
     }
 
-    private function checkArgumentResolver(&$val)
+    private function checkArgs(&$val)
     {
-        if (!is_callable($val)) {
+        if (!is_array($val)) {
             return false;
+        }
+        foreach ($val as $opt) {
+            if (!is_string($opt)) {
+                return false;
+            }
         }
         return true;
     }
