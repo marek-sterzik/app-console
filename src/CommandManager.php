@@ -31,6 +31,7 @@ class CommandManager
         bool $allowPrefixMatch = true
     ): ?Command {
         $commands = $this->getCommands($name, $packages, true, $allowPrefixMatch);
+        return empty($commands) ? null : $commands[0];
     }
 
     public function getCommands(
