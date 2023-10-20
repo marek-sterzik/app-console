@@ -50,10 +50,8 @@ final class Command
         if (!$this->isInvokable()) {
             return true;
         }
-        if (substr($this->name, 0, 1) === '.') {
-            return true;
-        }
-        if ($this->metadata("hidden")) {
+        $defaultHidden = (substr($this->name, 0, 1) === '.') ? true : false;
+        if ($this->metadata("hidden") ?? $defaultHidden) {
             return true;
         }
         return false;
