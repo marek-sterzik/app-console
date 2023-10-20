@@ -59,6 +59,14 @@ final class Command
         return false;
     }
 
+    public function getInvokePluginBinary(): ?string
+    {
+        if (!$this->isInvokable()) {
+            return null;
+        }
+        return $this->bin;
+    }
+
     public function getBin(): string
     {
         return $this->bin;
@@ -69,14 +77,24 @@ final class Command
         return $this->name;
     }
 
-    public function invoke(array $args): int
+    public function invoke(array $args, ?Command $invokePlugin): int
     {
         if ($this->isInvokable()) {
+            $invokeBinary = null;
+            if ($invokePlugin !== null) {
+                $invokeBinary = $invokePlugin->getInvokePluginBinary();
+            }
             foreach ($this->envVars as $var => $value) {
                 putenv(sprintf("%s=%s", $var, $value));
             }
 
-            $cmd = escapeshellcmd($this->bin);
+            if ($invokeBinary !== null) {
+                $cmd = escapeshellcmd($invokeBinary);
+                $cmd .= " " . escapeshellarg($this->bin);
+            } else {
+                $cmd = escapeshellcmd($this->bin);
+            }
+
             foreach ($args as $arg) {
                 $cmd .= " " . escapeshellarg($arg);
             }

@@ -50,9 +50,9 @@ class App
             if ($command === null) {
                 $this->printGlobalHelp();
             } else {
-                $cmds = $this->commandManager->getCommands($command, $packages, true);
-                if (!empty($cmds)) {
-                    $this->printCommandHelp($cmds[0]);
+                $cmd = $this->commandManager->getSingleCommand($command, $packages);
+                if ($cmd !== null) {
+                    $this->printCommandHelp($cmd);
                 } else {
                     fprintf(STDERR, "Help not available");
                 }
@@ -72,6 +72,8 @@ class App
 
         $commands = $this->commandManager->getCommands($command, $packages, !$all);
 
+        $invokePlugin = $this->commandManager->getSingleCommand(".invoke");
+
         // In fact the reversed order is the primary order in the data structures
         // and therefore we need to reverse when one requests the non-reversed
         // order
@@ -86,7 +88,7 @@ class App
         
         $finalRet = 0;
         foreach ($commands as $commandObj) {
-            $ret = $this->invokeCommand($commandObj, $args);
+            $ret = $this->invokeCommand($commandObj, $args, $invokePlugin);
             if ($ret !== 0) {
                 if ($finalRet === 0 || $finalRet === $ret) {
                     $finalRet = $ret;
@@ -99,7 +101,7 @@ class App
         return $finalRet;
     }
 
-    private function invokeCommand($command, $args)
+    private function invokeCommand(Command $command, array $args, ?Command $invokePlugin)
     {
         foreach ($command->getMetadataErrors() as $error) {
             fprintf(STDERR, "Warning: invalid metadata: %s\n", $error);
@@ -126,7 +128,7 @@ class App
 
         $args = $command->transformArguments($options, $args);
 
-        return $command->invoke($args);
+        return $command->invoke($args, $invokePlugin);
     }
 
     private function createCommandsDescriptor()

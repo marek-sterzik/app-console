@@ -25,6 +25,14 @@ class CommandManager
         }
     }
 
+    public function getSingleCommand(
+        string $name,
+        ?array $packages = null,
+        bool $allowPrefixMatch = true
+    ): ?Command {
+        $commands = $this->getCommands($name, $packages, true, $allowPrefixMatch);
+    }
+
     public function getCommands(
         string $name,
         ?array $packages = null,
