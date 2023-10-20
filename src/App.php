@@ -81,7 +81,7 @@ class App
             $commands = array_reverse($commands);
         }
 
-        if (empty($commands)) {
+        if (empty($commands) && !$all) {
             fprintf(STDERR, "Unknown command: %s\n", $command);
             return 1;
         }
