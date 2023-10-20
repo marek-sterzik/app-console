@@ -105,5 +105,6 @@ class MetaDataChecker
     private function checkBool(&$val)
     {
         $val = $val ? true : false;
+        return true;
     }
 }
