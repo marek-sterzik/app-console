@@ -39,6 +39,8 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
     {
         $runtimeConfigGenerator = new RuntimeConfigGenerator();
         $runtimeConfig = $runtimeConfigGenerator->generateConfig();
+        $package = InstalledVersions::getRootPackage();
+        $rootDir = Path::canonize($package['install_path']);
         (new RuntimeConfig($rootDir))->set($runtimeConfig);
     }
 }
