@@ -95,7 +95,7 @@ class CommandManager
         if (!$command->isInvokable()) {
             $command = null;
         }
-        return null;
+        return $command;
     }
 
     private function getCompatScriptsDirs()

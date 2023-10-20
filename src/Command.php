@@ -130,8 +130,11 @@ final class Command
 
     private function loadMetadata(): array
     {
-        $metaFile = $this->metadataFile;
-        $metaData = @file_get_contents($metaFile);
+        if ($this->metadataFile === null) {
+            return [];
+        }
+
+        $metaData = @file_get_contents($this->metadataFile);
 
         if (!is_string($metaData)) {
             return [];
