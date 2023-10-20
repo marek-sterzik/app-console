@@ -65,7 +65,7 @@ class RuntimeConfigGenerator
             );
             if ($config['scripts-dir'] === null) {
                 fprintf(
-                    STDERR
+                    STDERR,
                     "Warning: Package %s contains invalid scripts-dir\n",
                     $package
                 );
