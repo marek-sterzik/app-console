@@ -79,8 +79,12 @@ class ParamConverter
         if ($this->type === self::TYPE_SCALAR && empty($data)) {
             $data[] = '';
         }
-
-
+        
+        foreach ($data as &$item) {
+            if (is_bool($item)) {
+                $item = $item ? 1 : 0;
+            }
+        }
 
         return $data;
     }
