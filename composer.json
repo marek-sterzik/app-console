@@ -3,7 +3,7 @@
     "description": "The SPŠ Ostrov App Console Framework",
     "license": "MIT",
     "homepage": "https://github.com/marek-sterzik/app-console",
-    "type": "composer-plugin",
+    "type": "library",
     "authors": [
         {
             "name": "Marek Sterzik",
@@ -22,8 +22,5 @@
     },
     "bin": [
         "bin/app"
-    ],
-    "extra": {
-        "class": "SPSOstrov\\AppConsole\\ComposerPlugin"
-    }
+    ]
 }

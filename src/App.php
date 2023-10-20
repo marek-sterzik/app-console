@@ -12,7 +12,7 @@ class App
     public function __construct($composerAutoloadPath)
     {
         $rootDir = dirname(Path::canonize(dirname($composerAutoloadPath)));
-        $this->config = (new RuntimeConfig($rootDir))->get();
+        $this->config = (new RuntimeConfigGenerator())->generateConfig();
         $this->config['rootDir'] = $rootDir;
         $this->config['argv0'] = null;
 
