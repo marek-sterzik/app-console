@@ -181,7 +181,9 @@ class App
     private function createCommandGetOpt($command, $mergeControl)
     {
         $options = $command->getOptions();
+        $strictMode = empty($options) ? false : true;
         $options = new Options($options);
+        $options->setStrictMode($strictMode);
         if ($mergeControl) {
             foreach ($this->getControlOpts() as $option) {
                 $options->registerOption($option, false);
