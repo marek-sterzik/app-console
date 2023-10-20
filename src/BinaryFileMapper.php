@@ -46,7 +46,7 @@ class BinaryFileMapper
 
     public function filesForBin(string $dir, string $command): ?array
     {
-        if (strpos($command, '/') !== false || preg_match('/\.json$/', $command)) {
+        if ($command === '.' || strpos($command, '/') !== false || preg_match('/\.json$/', $command)) {
             return null;
         }
         $bin = $dir . "/" . $command;
