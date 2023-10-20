@@ -186,6 +186,7 @@ class App
         $options = [
             'h|help[__help__]        Show help',
             'v|version[__version__]  Show version',
+            '$command?               Command to be called',
             '$args*                  Command arguments',
         ];
         if (!$forSubCommand) {
@@ -193,7 +194,6 @@ class App
                 'a|all       Run all commands of the given name',
                 'r|reverse   Run the commands in a reverse order',
                 'p|package*  Run only the command from a specific package',
-                '$command?   Command to be called',
             ]);
         }
         return $options;
