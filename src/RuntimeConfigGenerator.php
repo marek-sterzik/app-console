@@ -2,9 +2,6 @@
 
 namespace SPSOstrov\AppConsole;
 
-use Composer\Composer;
-use Composer\IO\IOInterface;
-use Composer\Plugin\PluginInterface;
 use Composer\InstalledVersions;
 use Composer\EventDispatcher\EventSubscriberInterface;
 
@@ -31,12 +28,11 @@ class RuntimeConfigGenerator
                     $runtimeConfig['scripts-dirs'][$packageConfig['scripts-dir']] = $package;
                 }
             } else {
-                $this->io->writeError([
-                        sprintf(
-                            "<warning>Cannot determine relative path for spsstrov-runtime plugin %s</warning>",
-                            $package
-                        )
-                ]);
+                fprintf(
+                    STDERR,
+                    "Warning: Cannot determine relative path for spsstrov-runtime plugin %s\n",
+                    $package
+                );
             }
         }
         return $runtimeConfig;
@@ -68,12 +64,11 @@ class RuntimeConfigGenerator
                 $packageDir . "/" . Path::canonizeRelative($config['scripts-dir'])
             );
             if ($config['scripts-dir'] === null) {
-                $this->io->writeError([
-                        sprintf(
-                            "<warning>Package %s contains invalid scripts-dir</warning>",
-                            $package
-                        )
-                ]);
+                fprintf(
+                    STDERR
+                    "Warning: Package %s contains invalid scripts-dir\n",
+                    $package
+                );
             } else {
                 if ($package !== '__root__' && !is_dir($rootDir . "/" . $config['scripts-dir'])) {
                     $config['scripts-dir'] = null;
@@ -92,24 +87,22 @@ class RuntimeConfigGenerator
         }
         $content = @json_decode($content, true);
         if (!is_array($content)) {
-                $this->io->writeError([
-                        sprintf(
-                            "<warning>Package %s has broken composer.json</warning>",
-                            $package
-                        )
-                ]);
+                fprintf(
+                    STDERR,
+                    "Warning: Package %s has broken composer.json\n",
+                    $package
+                );
                 return [];
         }
         if (!isset($content['extra'])) {
             return [];
         }
         if (!is_array($content['extra'])) {
-            $this->io->writeError([
-                    sprintf(
-                        "<warning>Package %s has broken extra field in composer.json</warning>",
-                        $package
-                    )
-            ]);
+            fprintf(
+                STDERR,
+                "Warning: Package %s has broken extra field in composer.json\n",
+                $package
+            );
             return [];
         }
         if (!isset($content['extra']['spsostrov-app-console'])) {
@@ -117,12 +110,11 @@ class RuntimeConfigGenerator
         }
         $config = $content['extra']['spsostrov-app-console'];
         if (!$this->validateExtraConfig($config)) {
-            $this->io->writeError([
-                    sprintf(
-                        "<warning>Package %s has broken runtime configuration in composer.json</warning>",
-                        $package
-                    )
-            ]);
+            fprintf(
+                STDERR,
+                "Warning: Package %s has broken runtime configuration in composer.json\n",
+                $package
+            );
             return [];
         }
 

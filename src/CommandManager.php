@@ -122,7 +122,8 @@ class CommandManager
 
     private function createCommand($dir, $name)
     {
-        $fullDir = Path::canonize($this->rootDir . "/" . $dir);
+        $dir = $this->rootDir . "/" . $dir;
+        $fullDir = Path::canonize($dir);
         $binFiles = BinaryFileMapper::instance()->filesForBin($dir, $name);
         if ($binFiles === null) {
             return null;
