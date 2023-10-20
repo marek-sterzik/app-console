@@ -69,7 +69,7 @@ final class Command
         return $this->name;
     }
 
-    private function invoke(array $args): int
+    public function invoke(array $args): int
     {
         if ($this->isInvokable()) {
             foreach ($this->envVars as $var => $value) {
