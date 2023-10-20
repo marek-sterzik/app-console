@@ -33,13 +33,13 @@ class CommandManager
 
     public function getCommands(
         string $name,
-        ?string $package = null,
+        ?array $packages = null,
         bool $firstOnly = false,
         bool $allowPrefixMatch = true
     ): array {
         $searchIn = [];
         foreach ($this->scriptsDirs as $dir => $dirPackage) {
-            if ($package !== null && $package !== $dirPackage) {
+            if ($packages !== null && in_array($dirPackage, $packages)) {
                 continue;
             }
             $searchIn[] = $dir;

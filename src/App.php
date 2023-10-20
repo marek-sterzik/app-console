@@ -38,13 +38,24 @@ class App
         }
         $command = $options['command'] ?? null;
         $args = $options['args'] ?? [];
+        
+        $packages = $options['package'] ?? [];
+        if (empty($packages)) {
+            $packages = null;
+        }
+
+        $all = $options['all'] ?? false;
 
         if ($options['__help__'] ?? false) {
             if ($command === null) {
                 $this->printGlobalHelp();
             } else {
-                $commandObj = $this->commandManager->getCommand($command);
-                $this->printCommandHelp($commandObj);
+                $cmds = $this->commandManager->getCommands($command, $packages, true);
+                if (!empty($cmds)) {
+                    $this->printCommandHelp($cmds[0]);
+                } else {
+                    fprintf(STDERR, "Help not available");
+                }
             }
             return 1;
         }
@@ -59,7 +70,14 @@ class App
             return 1;
         }
 
-        $commands = $this->commandManager->getCommands($command, null, true);
+        $commands = $this->commandManager->getCommands($command, $packages, !$all);
+
+        // In fact the reversed order is the primary order in the data structures
+        // and therefore we need to reverse when one requests the non-reversed
+        // order
+        if (!($options['reverse'] ?? false)) {
+            $commands = array_reverse($commands);
+        }
 
         if (empty($commands)) {
             fprintf(STDERR, "Unknown command: %s\n", $command);
@@ -145,7 +163,7 @@ class App
         
     }
 
-    private function printCommandHelp($command)
+    private function printCommandHelp(Command $command): void
     {
         $description = $command->getDescription();
         fprintf(STDERR, "Usage:\n  " . $this->config['argv0'] . " " . $command->getName() . " [options] [args]\n");
@@ -158,34 +176,42 @@ class App
         }
     }
 
-    private function printVersionInfo()
+    private function printVersionInfo(): void
     {
         fprintf(STDERR, "Error: version info not yet available!\n");
     }
 
-    private function getControlOpts()
+    private function getControlOpts(bool $forSubCommand): array
     {
-        return [
-            'h|help[__help__] Show help',
-            'v|version[__version__] Show version',
-            '$command? Command to be called',
-            '$args* Command arguments',
+        $options = [
+            'h|help[__help__]        Show help',
+            'v|version[__version__]  Show version',
+            '$args*                  Command arguments',
         ];
+        if (!$forSubCommand) {
+            $options = array_merge($options, [
+                'a|all       Run all commands of the given name',
+                'r|reverse   Run the commands in a reverse order',
+                'p|package*  Run only the command from a specific package',
+                '$command?   Command to be called',
+            ]);
+        }
+        return $options;
     }
 
-    private function createGlobalGetOpt()
+    private function createGlobalGetOpt(): Options
     {
-        return new Options($this->getControlOpts());
+        return new Options($this->getControlOpts(false));
     }
 
-    private function createCommandGetOpt($command, $mergeControl)
+    private function createCommandGetOpt(Command $command, bool $mergeControl): Options
     {
         $options = $command->getOptions();
         $strictMode = empty($options) ? false : true;
         $options = new Options($options);
         $options->setStrictMode($strictMode);
         if ($mergeControl) {
-            foreach ($this->getControlOpts() as $option) {
+            foreach ($this->getControlOpts(true) as $option) {
                 $options->registerOption($option, false);
             }
         }
