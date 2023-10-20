@@ -14,6 +14,36 @@ class BinaryFileMapper
         return self::$instance;
     }
 
+    public function prefixMatchBin(string $dir, string $commandPrefix): ?string
+    {
+        $prefixLength = strlen($commandPrefix);
+        if ($prefixLength == 0) {
+            return null;
+        }
+
+        $foundCommand = null;
+        $dd = @opendir($dir);
+        if ($dd) {
+            while (($file = readdir($dd)) !== false) {
+                if ($file === '.' || $file === '..' || $file === '') {
+                    continue;
+                }
+                if (preg_match('/\.json$/', $file)) {
+                    continue;
+                }
+
+                if (strlen($file) >= $prefixLength && substr($file, 0, $prefixLength) === $commandPrefix) {
+                    if ($foundCommand !== null) {
+                        return null;
+                    }
+                    $foundCommand = $file;
+                }
+            }
+            closedir($dd);
+        }
+        return $foundCommand;
+    }
+
     public function filesForBin(string $dir, string $command): ?array
     {
         if (strpos($command, '/') !== false || preg_match('/\.json$/', $command)) {

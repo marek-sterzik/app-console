@@ -31,16 +31,22 @@ class CommandManager
         return $commands[0] ?? null;
     }
 
-    public function getCommands(string $name, ?string $package = null, bool $firstOnly = false): array
-    {
-        $commands = [];
-        if (preg_match('-/-', $name)) {
-            return [];
-        }
+    public function getCommands(
+        string $name,
+        ?string $package = null,
+        bool $firstOnly = false,
+        bool $allowPrefixMatch = true
+    ): array {
+        $searchIn = [];
         foreach ($this->scriptsDirs as $dir => $dirPackage) {
             if ($package !== null && $package !== $dirPackage) {
                 continue;
             }
+            $searchIn[] = $dir;
+        }
+
+        $commands = [];
+        foreach ($searchIn as $dir) {
             $command = $this->createCommand($dir, $name);
             if ($command !== null) {
                 $commands[] = $command;
@@ -49,6 +55,33 @@ class CommandManager
                 }
             }
         }
+        
+        /* do the prefix match if required */
+        if (empty($commands) && $allowPrefixMatch) {
+            $foundCommand = null;
+            foreach ($searchIn as $dir) {
+                $command = BinaryFileMapper::instance()->prefixMatchBin($this->rootDir . "/" . $dir, $name);
+                if ($command !== null) {
+                    if ($foundCommand !== null && $foundCommand !== $command) {
+                        $foundCommand = null;
+                        break;
+                    }
+                    $foundCommand = $command;
+                }
+            }
+            if ($foundCommand !== null) {
+                foreach ($searchIn as $dir) {
+                    $command = $this->createCommand($dir, $foundCommand);
+                    if ($command !== null) {
+                        $commands[] = $command;
+                        if ($firstOnly) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         return $commands;
     }
 
