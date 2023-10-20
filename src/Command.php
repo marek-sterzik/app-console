@@ -4,70 +4,109 @@ namespace SPSOstrov\AppConsole;
 
 final class Command
 {
+    /** @var string */
     private $bin;
+
+    /** @var string|null */
+    private $metadataFile;
+
+    /** @var string */
+    private $type;
+
+    /** @var string */
     private $name;
+
+    /** @var array */
     private $envVars;
+
+    /** @var array|null */
     private $metadata;
 
-    public function __construct($bin, $name, $envVars)
+    public function __construct(string $bin, ?string $metadataFile, string $name, array $envVars)
     {
         $this->bin = $bin;
+        $this->metadataFile = $metadataFile;
+        $this->type = "none";
         $this->name = $name;
         $this->envVars = $envVars;
         $this->metadata = null;
+        $this->detectBin();
     }
 
-    public function getBin()
+    private function detectBin(string $bin): void
+    {
+        if (file_exists($this->bin) && is_executable($this->bin)) {
+            $this->type = "normal";
+        }
+    }
+
+    public function isInvokable(): bool
+    {
+        return in_array($this->type, ['normal']);
+    }
+
+    public function isHidden(): bool
+    {
+        if (!$this->isInvokable()) {
+            return true;
+        }
+        if ($this->metadata("hidden")) {
+            return true;
+        }
+        return false;
+    }
+
+    public function getBin(): string
     {
         return $this->bin;
     }
 
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
-    public function invoke($args)
+    private function invoke(array $args): int
     {
-        foreach ($this->envVars as $var => $value) {
-            putenv(sprintf("%s=%s", $var, $value));
-        }
+        if ($this->isInvokable()) {
+            foreach ($this->envVars as $var => $value) {
+                putenv(sprintf("%s=%s", $var, $value));
+            }
 
-        $cmd = escapeshellcmd($this->bin);
-        foreach ($args as $arg) {
-            $cmd .= " " . escapeshellarg($arg);
+            $cmd = escapeshellcmd($this->bin);
+            foreach ($args as $arg) {
+                $cmd .= " " . escapeshellarg($arg);
+            }
+            $ret = 1;
+            system($cmd, $ret);
+            return $ret;
+        } else {
+            fprintf(STDERR, "Error: this command is not invokable");
+            return 1;
         }
-        $ret = 1;
-        system($cmd, $ret);
-        return $ret;
     }
 
-    public function getHelp()
+    public function getHelp(): ?string
     {
         return $this->metadata("help");
     }
 
-    public function getOptions()
+    public function getOptions(): array
     {
         return $this->metadata("options") ?? [];
     }
 
-    public function getOperands()
-    {
-        return $this->metadata("operands") ?? [];
-    }
-
-    public function getDescription()
+    public function getDescription(): ?string
     {
         return $this->metadata("description");
     }
 
-    public function getMetadataErrors()
+    public function getMetadataErrors(): array
     {
         return $this->metadata('errors') ?? [];
     }
 
-    public function transformArguments($options, $arguments)
+    public function transformArguments(array $options, array $arguments): array
     {
         $argsDescriptor = $this->metadata("args");
         if ($argsDescriptor === null) {
@@ -78,7 +117,7 @@ final class Command
         }
     }
 
-    private function metadata($key)
+    private function metadata(string $key)
     {
         if ($this->metadata === null) {
             $this->metadata = $this->loadMetadata();
@@ -86,9 +125,9 @@ final class Command
         return $this->metadata[$key] ?? null;
     }
 
-    private function loadMetadata()
+    private function loadMetadata(): array
     {
-        $metaFile = $this->bin . ".json";
+        $metaFile = $this->metadataFile;
         $metaData = @file_get_contents($metaFile);
 
         if (!is_string($metaData)) {

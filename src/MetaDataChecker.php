@@ -12,6 +12,7 @@ class MetaDataChecker
         "options" => "checkOptions",
         "help" => "checkString",
         "args" => "checkArgs",
+        "hidden" => "checkBool",
     ];
     private static $instance = null;
 
@@ -94,5 +95,10 @@ class MetaDataChecker
             }
         }
         return true;
+    }
+
+    private function checkBool(&$val)
+    {
+        $val = $val ? true : false;
     }
 }

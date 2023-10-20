@@ -9,7 +9,7 @@ class CommandManager
     private $scriptsDirs;
     private $envVars;
     
-    public function __construct($config)
+    public function __construct(array $config)
     {
         $this->rootDir = $config['rootDir'];
         $this->scriptsDirs = $config['scripts-dirs'] ?? [];
@@ -25,13 +25,13 @@ class CommandManager
         }
     }
 
-    public function getCommand($name, $package = null)
+    public function getCommand(string $name, ?string $package = null): ?Command
     {
         $commands = $this->getCommands($name, $package, true);
         return $commands[0] ?? null;
     }
 
-    public function getCommands($name, $package = null, $firstOnly = false)
+    public function getCommands(string $name, ?string $package = null, bool $firstOnly = false): array
     {
         $commands = [];
         if (preg_match('-/-', $name)) {
@@ -52,38 +52,19 @@ class CommandManager
         return $commands;
     }
 
-    public function getAllCommands()
+    public function getAllCommands(bool $includeHidden = false): array
     {
         $commands = [];
         foreach ($this->scriptsDirs as $dir => $package) {
-            $names = $this->listCommands($dir);
+            $names = BinaryFileMapper::instance()->listCommandsInDir($this->rootDir . "/" . $dir);
             foreach ($names as $name) {
                 $command = $this->createCommand($dir, $name);
-                if ($command !== null) {
+                if ($command !== null && ($includeHidden || !$command->isHidden())) {
                     $commands[$name] = $command;
                 }
             }
         }
         ksort($commands);
-        return $commands;
-    }
-
-    private function listCommands($dir)
-    {
-        $dd = @opendir($this->rootDir . "/" . $dir);
-        $commands = [];
-        if ($dd) {
-            while (($file = readdir($dd)) !== false) {
-                if (substr($file, 0, 1) === '.' || $file === '') {
-                    continue;
-                }
-                if ($this->hasForbiddenExtension($file)) {
-                    continue;
-                }
-                $commands[] = $file;
-            }
-            closedir($dd);
-        }
         return $commands;
     }
 
@@ -105,16 +86,16 @@ class CommandManager
 
     private function createCommand($dir, $name)
     {
-        $bin = Path::canonize($this->rootDir . "/" . $dir . "/" . $name);
-        if (is_file($bin) && self::isInvokable($bin)) {
-            return new Command($bin, $name, $this->envVars);
+        $fullDir = Path::canonize($this->rootDir . "/" . $dir);
+        $binFiles = BinaryFileMapper::instance()->filesForBin($dir, $name);
+        if ($binFiles === null) {
+            return null;
+        }
+        $command = new Command($binFiles[0], $binFiles[1], $name, $this->envVars);
+        if (!$command->isInvokable()) {
+            $command = null;
         }
         return null;
-    }
-    
-    private function isInvokable($bin)
-    {
-        return is_executable($bin) && !preg_match('/\.json$/', $bin);
     }
 
     private function getCompatScriptsDirs()
