@@ -33,7 +33,7 @@ final class Command
         $this->detectBin();
     }
 
-    private function detectBin(string $bin): void
+    private function detectBin(): void
     {
         if (file_exists($this->bin) && is_executable($this->bin)) {
             $this->type = "normal";
