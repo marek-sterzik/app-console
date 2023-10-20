@@ -4,7 +4,7 @@ namespace SPSOstrov\AppConsole;
 
 class CommandManager
 {
-    const FORBIDDEN_EXTENSIONS = [".meta.php"];
+    const FORBIDDEN_EXTENSIONS = [".json"];
     private $rootDir;
     private $scriptsDirs;
     private $envVars;

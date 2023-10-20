@@ -88,15 +88,25 @@ final class Command
 
     private function loadMetadata()
     {
-        $metaFile = $this->bin . ".meta.php";
-        if (!file_exists($metaFile)) {
+        $metaFile = $this->bin . ".json";
+        $metaData = @file_get_contents($metaFile);
+
+        if (!is_string($metaData)) {
             return [];
         }
-        $metaData = @include $metaFile;
+
+        $metaData = @json_decode($metaData, true);
+
+        if (!is_array($metaData)) {
+            return [];
+        }
+
         if (!MetaDataChecker::instance()->check($metaData)) {
             $metaData = [];
         }
+
         $metaData['errors'] = MetaDataChecker::instance()->getLastErrors();
+        
         return $metaData;
     }
 }
