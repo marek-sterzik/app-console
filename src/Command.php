@@ -64,7 +64,7 @@ final class Command
         return $this->metadata('invoke-param');
     }
 
-    public function getInvokeBinary(Command $commandToBeInvoked): ?array
+    public function getInvokerBinary(Command $commandToBeInvoked): ?array
     {
         if (!$this->isInvokable()) {
             return null;
