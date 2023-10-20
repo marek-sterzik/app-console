@@ -126,9 +126,14 @@ class App
             return 1;
         }
 
+        $invoker = null;
+        if ($invokePlugin !== null) {
+            $invoker = $invokePlugin->getInvokerBinary($command);
+        }
+
         $args = $command->transformArguments($options, $args);
 
-        return $command->invoke($args, $invokePlugin);
+        return $command->invoke($args, $invoker);
     }
 
     private function createCommandsDescriptor()

@@ -13,6 +13,9 @@ class MetaDataChecker
         "help" => "checkString",
         "args" => "checkArgs",
         "hidden" => "checkBool",
+        "is-invoker" => "checkBool",
+        "invoker-param-default" => "checkString",
+        "invoke-param" => "checkString",
     ];
     private static $instance = null;
 
@@ -33,7 +36,9 @@ class MetaDataChecker
             $data = [];
         }
         foreach (array_keys($data) as $key) {
-            if (isset(self::CHECKS[$key])) {
+            if ($data[$key] === null) {
+                unset($data[$key]);
+            } elseif (isset(self::CHECKS[$key])) {
                 $fn = self::CHECKS[$key];
                 if (!$this->$fn($data[$key])) {
                     unset($data[$key]);

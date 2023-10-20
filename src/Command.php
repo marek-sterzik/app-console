@@ -59,12 +59,26 @@ final class Command
         return false;
     }
 
-    public function getInvokePluginBinary(): ?string
+    public function getInvokeParam(): ?string
+    {
+        return $this->metadata('invoke-param');
+    }
+
+    public function getInvokeBinary(Command $commandToBeInvoked): ?array
     {
         if (!$this->isInvokable()) {
             return null;
         }
-        return $this->bin;
+        if (!$this->metadata('is-invoker')) {
+            return null;
+        }
+        $invokerParam = $this->metadata('invoker-param-default');
+        $binary = [$this->bin];
+        if ($invokerParam !== null) {
+            $param = $commandToBeInvoked->getInvokeParam();
+            $binary[] = $param ?? $invokerParam;
+        }
+        return $binary;
     }
 
     public function getBin(): string
@@ -77,25 +91,18 @@ final class Command
         return $this->name;
     }
 
-    public function invoke(array $args, ?Command $invokePlugin): int
+    public function invoke(array $args, ?array $invoker): int
     {
         if ($this->isInvokable()) {
-            $invokeBinary = null;
-            if ($invokePlugin !== null) {
-                $invokeBinary = $invokePlugin->getInvokePluginBinary();
-            }
             foreach ($this->envVars as $var => $value) {
                 putenv(sprintf("%s=%s", $var, $value));
             }
-
-            if ($invokeBinary !== null) {
-                $cmd = escapeshellcmd($invokeBinary);
-                $cmd .= " " . escapeshellarg($this->bin);
-            } else {
-                $cmd = escapeshellcmd($this->bin);
+            if ($invoker === null) {
+                $invoker = [];
             }
-
-            foreach ($args as $arg) {
+            $invoker[] = $this->bin;
+            $cmd = escapeshellcmd(array_shift($invoker));
+            foreach (array_merge($invoker, $args) as $arg) {
                 $cmd .= " " . escapeshellarg($arg);
             }
             $ret = 1;
