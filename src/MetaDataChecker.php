@@ -14,8 +14,8 @@ class MetaDataChecker
         "args" => "checkArgs",
         "hidden" => "checkBool",
         "is-invoker" => "checkBool",
-        "invoker-param-default" => "checkString",
-        "invoke-param" => "checkString",
+        "invoker-accepted-params" => "checkInvokerParams",
+        "invoker-params" => "checkInvokerParams",
     ];
     private static $instance = null;
 
@@ -33,6 +33,7 @@ class MetaDataChecker
     {
         $this->errors = [];
         if (!is_array($data)) {
+            $this->error("Command has malformed metadata");
             $data = [];
         }
         foreach (array_keys($data) as $key) {
@@ -41,6 +42,7 @@ class MetaDataChecker
             } elseif (isset(self::CHECKS[$key])) {
                 $fn = self::CHECKS[$key];
                 if (!$this->$fn($data[$key])) {
+                    $this->error(sprintf("Command metadata field %s contains invalid value", $key));
                     unset($data[$key]);
                 }
             } else {
@@ -105,6 +107,19 @@ class MetaDataChecker
     private function checkBool(&$val)
     {
         $val = $val ? true : false;
+        return true;
+    }
+
+    private function checkInvokerParams(&$val)
+    {
+        if (!is_array($val)) {
+            return false;
+        }
+        foreach ($val as $value) {
+            if ($value !== null && !is_string($value)) {
+                return false;
+            }
+        }
         return true;
     }
 }

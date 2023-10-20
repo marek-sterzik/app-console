@@ -59,9 +59,9 @@ final class Command
         return false;
     }
 
-    public function getInvokeParam(): ?string
+    public function getInvokerParam(): array
     {
-        return $this->metadata('invoke-param');
+        return $this->metadata('invoker-params') ?? [];
     }
 
     public function getInvokerBinary(Command $commandToBeInvoked): ?array
@@ -72,12 +72,19 @@ final class Command
         if (!$this->metadata('is-invoker')) {
             return null;
         }
-        $invokerParam = $this->metadata('invoker-param-default');
+        
         $binary = [$this->bin];
-        if ($invokerParam !== null) {
-            $param = $commandToBeInvoked->getInvokeParam();
-            $binary[] = $param ?? $invokerParam;
+        
+        $invokerParams = $commandToBeInvoked->getInvokerParam();
+
+        foreach ($this->metadata('invoker-accepted-params') ?? [] as $param => $defaultValue) {
+            $value = $invokerParams[$param] ?? $defaultValue;
+            if ($value === null) {
+                return null;
+            }
+            $binary[] = $value;
         }
+
         return $binary;
     }
 
@@ -166,10 +173,6 @@ final class Command
         }
 
         $metaData = @json_decode($metaData, true);
-
-        if (!is_array($metaData)) {
-            return [];
-        }
 
         if (!MetaDataChecker::instance()->check($metaData)) {
             $metaData = [];
