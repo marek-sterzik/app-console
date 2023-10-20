@@ -25,12 +25,6 @@ class CommandManager
         }
     }
 
-    public function getCommand(string $name, ?string $package = null): ?Command
-    {
-        $commands = $this->getCommands($name, $package, true);
-        return $commands[0] ?? null;
-    }
-
     public function getCommands(
         string $name,
         ?array $packages = null,
@@ -39,7 +33,7 @@ class CommandManager
     ): array {
         $searchIn = [];
         foreach ($this->scriptsDirs as $dir => $dirPackage) {
-            if ($packages !== null && in_array($dirPackage, $packages)) {
+            if ($packages !== null && !in_array($dirPackage, $packages)) {
                 continue;
             }
             $searchIn[] = $dir;
