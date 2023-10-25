@@ -1,0 +1,11 @@
+{
+    "description": "display help",
+    "options": [
+        "$command? command which help should be displayed"
+    ],
+    "args": [
+        "?command"
+    ],
+    "help": "Display help for a given command",
+    "hidden": true
+}
