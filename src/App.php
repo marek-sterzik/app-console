@@ -206,7 +206,7 @@ class App
             $options = array_merge($options, [
                 'a|all       Run all commands of the given name',
                 'r|reverse   Run the commands in a reverse order',
-                'p|package*  Run only the command from a specific package',
+                'p|package*  [=pkg]Run only the command from a specific package',
             ]);
         }
         return $options;
