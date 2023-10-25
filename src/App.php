@@ -2,12 +2,17 @@
 
 namespace SPSOstrov\AppConsole;
 use SPSOstrov\GetOpt\Options;
+use SPSOstrov\GetOpt\AsciiTable;
+use SPSOstrov\GetOpt\Formatter;
+use SPSOstrov\GetOpt\DefaultFormatter;
+
 use Exception;
 
 class App
 {
     private $config;
     private $commandManager;
+    private $formatter;
 
     public function __construct($composerAutoloadPath)
     {
@@ -17,6 +22,9 @@ class App
         $this->config['argv0'] = null;
 
         $this->commandManager = null;
+
+        $this->formatter = new DefaultFormatter();
+        $this->formatter->setWidth(120);
     }
 
     public function run($argv)
@@ -136,50 +144,48 @@ class App
         return $command->invoke($args, $invoker);
     }
 
-    private function createCommandsDescriptor()
-    {
-        $descriptor = [];
-        $maxLen = 0;
-        foreach ($this->commandManager->getAllCommands() as $name => $command) {
-            $maxLen = max($maxLen, strlen($name));
-            $descriptor[] = ["command" => $name, "spaces" => "", "description" => $command->getDescription()];
-        }
-        foreach ($descriptor as &$desc) {
-            $n = $maxLen - strlen($desc['command']);
-            $desc['spaces'] = str_repeat(" ", $n);
-        }
-        return $descriptor;
-    }
-
     private function printGlobalHelp()
     {
-        fprintf(STDERR, "Usage:\n  " . $this->config['argv0'] . " <command> [options] [args]\n\n");
-        $commands = $this->createCommandsDescriptor();
-        if (!empty($commands)) {
-            fprintf(STDERR, "Available commands:\n");
-        } else {
-            fprintf(STDERR, "No commands are currently registered in the app console.\n");
+        $getopt = $this->createGlobalGetOpt();
+        fprintf(STDERR, $getopt->getHelpFormatted($this->formatter)."\n");
+        $commandRows = [];
+        foreach ($this->commandManager->getAllCommands() as $commandName => $command) {
+            $commandRows[] = [
+                $commandName,
+                $command->getDescription(),
+            ];
         }
-        foreach ($commands as $command) {
-            if ($command['description'] !== null) {
-                fprintf(STDERR, "  %s%s  %s\n", $command['command'], $command['spaces'], $command['description']);
-            } else {
-                fprintf(STDERR, "  %s\n", $command['command']);
-            }
+        if (empty($commandRows)) {
+            $commands = null;
+            fprintf(STDERR, $this->wrapText("No commands are currently registered in the app console."));
+        } else {
+            $table = (new AsciiTable())->column([0, 2])->column()->width($this->formatter->getWidth(true));
+            $commands = $table->render($commandRows);
+            fprintf(STDERR, $this->formatter->formatBlock("Available commands:", $commands));
         }
         
+    }
+
+    private function wrapText(?string $text, ?string $caption = null, bool $indent = false): string
+    {
+        $table = (new AsciiTable())->column()->width($this->formatter->getWidth($indent));
+        $result = $table->render([[$text]]);
+        if ($indent) {
+            $result = $this->formatter->formatBlock($caption, $result);
+        }
+        return $result;
     }
 
     private function printCommandHelp(Command $command): void
     {
         $description = $command->getDescription();
-        fprintf(STDERR, "Usage:\n  " . $this->config['argv0'] . " " . $command->getName() . " [options] [args]\n");
-        if ($description !== null) {
-            fprintf(STDERR, "\n$description\n\n");
-        }
+        $getopt = $this->createCommandGetOpt($command, false);
+        fprintf(STDERR, $getopt->getHelpFormatted($this->formatter));
+
+        
         $help = $command->getHelp();
         if ($help !== null) {
-            fprintf(STDERR, "$help\n");
+            fprintf(STDERR, "\n".$this->wrapText($help, "Description:", true));
         }
     }
 
@@ -208,12 +214,15 @@ class App
 
     private function createGlobalGetOpt(): Options
     {
-        return new Options($this->getControlOpts(false));
+        $options = new Options($this->getControlOpts(false));
+        $options->setArgv0($this->config['argv0']);
+        return $options;
     }
 
     private function createCommandGetOpt(Command $command, bool $mergeControl): Options
     {
         $options = $command->getOptions();
+        $options->setArgv0($this->config['argv0'] . " " . $command->getName());
         $strictMode = empty($options) ? false : true;
         $options = new Options($options);
         $options->setStrictMode($strictMode);
