@@ -111,7 +111,7 @@ final class Command
                 $cmd .= " " . escapeshellarg($arg);
             }
             $ret = 1;
-            system($cmd, $ret);
+            passthru($cmd, $ret);
             return $ret;
         } else {
             fprintf(STDERR, "Error: this command is not invokable");
