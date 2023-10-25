@@ -222,10 +222,10 @@ class App
     private function createCommandGetOpt(Command $command, bool $mergeControl): Options
     {
         $options = $command->getOptions();
-        $options->setArgv0($this->config['argv0'] . " " . $command->getName());
         $strictMode = empty($options) ? false : true;
         $options = new Options($options);
         $options->setStrictMode($strictMode);
+        $options->setArgv0($this->config['argv0'] . " " . $command->getName());
         if ($mergeControl) {
             foreach ($this->getControlOpts(true) as $option) {
                 $options->registerOption($option, false);
