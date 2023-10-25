@@ -4,7 +4,8 @@ namespace SPSOstrov\AppConsole;
 
 class ParamConverter
 {
-    const TYPE_ARRAY = '@';
+    const TYPE_ARRAY = '*';
+    const TYPE_ARRAY_COMPAT = '@';
     const TYPE_SCALAR = '$';
     const TYPE_SCALAR_OPT = '?';
     const TYPE_COUNT = '#';
@@ -23,6 +24,9 @@ class ParamConverter
     public function __construct(string $descriptor)
     {
         $this->type = substr($descriptor, 0, 1);
+        if ($this->type === self::TYPE_ARRAY_COMPAT) {
+            $this->type = self::TYPE_ARRAY;
+        }
         if (!in_array($this->type, [self::TYPE_ARRAY, self::TYPE_SCALAR, self::TYPE_SCALAR_OPT, self::TYPE_COUNT])) {
             $this->type = self::TYPE_INVALID;
             return;
