@@ -78,7 +78,7 @@ class App
             return 1;
         }
 
-        $commands = $this->commandManager->getCommands($command, $packages, !$all);
+        $commands = $this->commandManager->getCommands($command, $packages, !$all, !$all);
 
         $invokePlugin = $this->commandManager->getSingleCommand(".invoke");
 
