@@ -182,7 +182,6 @@ class App
         $getopt = $this->createCommandGetOpt($command, false);
         fprintf(STDERR, $getopt->getHelpFormatted($this->formatter));
 
-        
         $help = $command->getHelp();
         if ($help !== null) {
             fprintf(STDERR, "\n".$this->wrapText($help, "Description:", true));
@@ -199,14 +198,14 @@ class App
         $options = [
             'h|help[__help__]        Show help',
             'v|version[__version__]  Show version',
-            '$command?               Command to be called',
-            '$args*                  Command arguments',
         ];
         if (!$forSubCommand) {
             $options = array_merge($options, [
                 'a|all       Run all commands of the given name',
                 'r|reverse   Run the commands in a reverse order',
                 'p|package*  [=pkg]Run only the command from a specific package',
+                '$command?   Command to be called',
+                '$args*      Command arguments',
             ]);
         }
         return $options;
