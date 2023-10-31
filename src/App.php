@@ -226,9 +226,7 @@ class App
         $options->setStrictMode($strictMode);
         $options->setArgv0($this->config['argv0'] . " " . $command->getName());
         if ($mergeControl) {
-            foreach ($this->getControlOpts(true) as $option) {
-                $options->registerOption($option, false);
-            }
+            $options->registerOptions($this->getControlOpts(true), false);
         }
         return $options;
     }
