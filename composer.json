@@ -18,7 +18,7 @@
     "require": {
         "php": ">=7.1",
         "composer-plugin-api": "^2.1",
-        "spsostrov/getopt": "dev-master"
+        "spsostrov/getopt": "^0.1"
     },
     "bin": [
         "bin/app"
