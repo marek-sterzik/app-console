@@ -16,7 +16,7 @@ class CommandManager
         $this->envVars = [
             "SPSO_APP_DIR" => $this->rootDir,
             "SPSO_APP_BIN" => $this->rootDir . "/vendor/bin/app",
-            "SPSO_APP_AUTOLOAD_PHP" => $this->rootDir . "/vendor/autoload.php";
+            "SPSO_APP_AUTOLOAD_PHP" => $this->rootDir . "/vendor/autoload.php",
         ];
         if (isset($config['argv0'])) {
             $this->envVars["SPSO_APP_ARGV0"] = $config['argv0'];
@@ -51,7 +51,7 @@ class CommandManager
 
         $commands = [];
         foreach ($searchIn as $dir) {
-            $command = $this->createCommand($dir, $name);
+            $command = $this->createCommand($dir, $name, $this->scriptsDirs[$dir]);
             if ($command !== null) {
                 $commands[] = $command;
                 if ($firstOnly) {
@@ -75,7 +75,7 @@ class CommandManager
             }
             if ($foundCommand !== null) {
                 foreach ($searchIn as $dir) {
-                    $command = $this->createCommand($dir, $foundCommand);
+                    $command = $this->createCommand($dir, $foundCommand, $this->scriptsDir[$dir]);
                     if ($command !== null && !$command->isHidden()) {
                         $commands[] = $command;
                         if ($firstOnly) {
@@ -95,7 +95,7 @@ class CommandManager
         foreach ($this->scriptsDirs as $dir => $package) {
             $names = BinaryFileMapper::instance()->listCommandsInDir($this->rootDir . "/" . $dir);
             foreach ($names as $name) {
-                $command = $this->createCommand($dir, $name);
+                $command = $this->createCommand($dir, $name, $package);
                 if ($command !== null && ($includeHidden || !$command->isHidden())) {
                     $commands[$name] = $command;
                 }
@@ -121,7 +121,7 @@ class CommandManager
         return false;
     }
 
-    private function createCommand($dir, $name)
+    private function createCommand($dir, $name, $package)
     {
         $dir = $this->rootDir . "/" . $dir;
         $fullDir = Path::canonize($dir);
@@ -129,7 +129,7 @@ class CommandManager
         if ($binFiles === null) {
             return null;
         }
-        $command = new Command($binFiles[0], $binFiles[1], $name, $this->envVars);
+        $command = new Command($binFiles[0], $binFiles[1], $name, $package, $this->envVars);
         if (!$command->isInvokable()) {
             $command = null;
         }

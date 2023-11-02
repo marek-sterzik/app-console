@@ -53,6 +53,7 @@ class App
         }
 
         $all = $options['all'] ?? false;
+        $list = $options['list'] ?? false;
 
         if ($options['__help__'] ?? false) {
             if ($command === null) {
@@ -79,6 +80,13 @@ class App
         }
 
         $commands = $this->commandManager->getCommands($command, $packages, !$all, !$all);
+
+        if ($list) {
+            foreach ($commands as $commandObj) {
+                echo $commandObj->getPackageName() . "\n";
+            }
+            return 0;
+        }
 
         $invokePlugin = $this->commandManager->getSingleCommand(".invoke");
 
@@ -204,6 +212,7 @@ class App
                 'a|all       Run all commands of the given name',
                 'r|reverse   Run the commands in a reverse order',
                 'p|package*  [=pkg]Run only the command from a specific package',
+                'l|list      print packages containing the command to be invoked instead to invoke them directly',
                 '$command?   Command to be called',
                 '$args*      Command arguments',
             ]);

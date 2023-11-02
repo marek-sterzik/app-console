@@ -16,18 +16,22 @@ final class Command
     /** @var string */
     private $name;
 
+    /** @var string */
+    private $packageName;
+
     /** @var array */
     private $envVars;
 
     /** @var array|null */
     private $metadata;
 
-    public function __construct(string $bin, ?string $metadataFile, string $name, array $envVars)
+    public function __construct(string $bin, ?string $metadataFile, string $name, string $packageName, array $envVars)
     {
         $this->bin = $bin;
         $this->metadataFile = $metadataFile;
         $this->type = "none";
         $this->name = $name;
+        $this->packageName = $packageName;
         $this->envVars = $envVars;
         $this->metadata = null;
         $this->detectBin();
@@ -38,6 +42,11 @@ final class Command
         if (file_exists($this->bin) && is_executable($this->bin)) {
             $this->type = "normal";
         }
+    }
+
+    public function getPackageName(): string
+    {
+        return $this->packageName;
     }
 
     public function isInvokable(): bool
