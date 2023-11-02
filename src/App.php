@@ -54,6 +54,7 @@ class App
 
         $all = $options['all'] ?? false;
         $list = $options['list'] ?? false;
+        $abortOnFailure = $options['abort-on-failure'] ?? false;
 
         if ($options['__help__'] ?? false) {
             if ($command === null) {
@@ -111,6 +112,9 @@ class App
                 } else {
                     $finalRet = 1;
                 }
+            }
+            if ($abortOnFailure && $finalRet !== 0) {
+                break;
             }
         }
 
@@ -209,12 +213,13 @@ class App
         ];
         if (!$forSubCommand) {
             $options = array_merge($options, [
-                'a|all       Run all commands of the given name',
-                'r|reverse   Run the commands in a reverse order',
-                'p|package*  [=pkg]Run only the command from a specific package',
-                'l|list      print packages containing the command to be invoked instead to invoke them directly',
-                '$command?   Command to be called',
-                '$args*      Command arguments',
+                'a|all             Run all commands of the given name',
+                'r|reverse         Run the commands in a reverse order',
+                'p|package*        [=pkg]Run only the command from a specific package',
+                'l|list            print packages containing the command to be invoked instead to invoke them directly',
+                'abort-on-failure  abort multiple command execution in case one fails',
+                '$command?         Command to be called',
+                '$args*            Command arguments',
             ]);
         }
         return $options;
