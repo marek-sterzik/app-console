@@ -16,6 +16,7 @@ class CommandManager
         $this->envVars = [
             "SPSO_APP_DIR" => $this->rootDir,
             "SPSO_APP_BIN" => $this->rootDir . "/vendor/bin/app",
+            "SPSO_APP_AUTOLOAD_PHP" => $this->rootDir . "/vendor/autoload.php";
         ];
         if (isset($config['argv0'])) {
             $this->envVars["SPSO_APP_ARGV0"] = $config['argv0'];
