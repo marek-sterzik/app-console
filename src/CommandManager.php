@@ -75,7 +75,7 @@ class CommandManager
             }
             if ($foundCommand !== null) {
                 foreach ($searchIn as $dir) {
-                    $command = $this->createCommand($dir, $foundCommand, $this->scriptsDir[$dir]);
+                    $command = $this->createCommand($dir, $foundCommand, $this->scriptsDirs[$dir]);
                     if ($command !== null && !$command->isHidden()) {
                         $commands[] = $command;
                         if ($firstOnly) {
