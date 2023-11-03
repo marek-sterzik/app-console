@@ -21,9 +21,6 @@ class CommandManager
         if (isset($config['argv0'])) {
             $this->envVars["SPSO_APP_ARGV0"] = $config['argv0'];
         }
-        if (empty($this->scriptsDirs)) {
-            $this->scriptsDirs = $this->getCompatScriptsDirs();
-        }
     }
 
     public function getSingleCommand(
@@ -42,8 +39,8 @@ class CommandManager
         bool $allowPrefixMatch = true
     ): array {
         $searchIn = [];
-        foreach ($this->scriptsDirs as $dir => $dirPackage) {
-            if ($packages !== null && !in_array($dirPackage, $packages)) {
+        foreach ($this->scriptsDirs as $dir => $dirConfig) {
+            if ($packages !== null && !in_array($dirConfig['package'], $packages)) {
                 continue;
             }
             $searchIn[] = $dir;
@@ -92,10 +89,10 @@ class CommandManager
     public function getAllCommands(bool $includeHidden = false): array
     {
         $commands = [];
-        foreach ($this->scriptsDirs as $dir => $package) {
+        foreach ($this->scriptsDirs as $dir => $dirConfig) {
             $names = BinaryFileMapper::instance()->listCommandsInDir($this->rootDir . "/" . $dir);
             foreach ($names as $name) {
-                $command = $this->createCommand($dir, $name, $package);
+                $command = $this->createCommand($dir, $name, $dirConfig);
                 if ($command !== null && ($includeHidden || !$command->isHidden())) {
                     $commands[$name] = $command;
                 }
@@ -121,7 +118,7 @@ class CommandManager
         return false;
     }
 
-    private function createCommand($dir, $name, $package)
+    private function createCommand($dir, $name, $dirConfig)
     {
         $dir = $this->rootDir . "/" . $dir;
         $fullDir = Path::canonize($dir);
@@ -130,16 +127,11 @@ class CommandManager
             return null;
         }
         $envVars = $this->envVars;
-        $envVars['SPSO_APP_PACKAGE_REL_DIR'] = $dir;
-        $command = new Command($binFiles[0], $binFiles[1], $name, $package, $envVars);
+        $envVars['SPSO_APP_PACKAGE_REL_DIR'] = $dirConfig['packageRelDir'];
+        $command = new Command($binFiles[0], $binFiles[1], $name, $dirConfig['package'], $envVars);
         if (!$command->isInvokable()) {
             $command = null;
         }
         return $command;
-    }
-
-    private function getCompatScriptsDirs()
-    {
-        return [];
     }
 }

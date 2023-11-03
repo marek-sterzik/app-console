@@ -25,7 +25,10 @@ class RuntimeConfigGenerator
             if ($path !== null) {
                 $packageConfig = $this->loadDirsFromPackage($rootDir, $path, $package);
                 if ($packageConfig['scripts-dir'] !== null) {
-                    $runtimeConfig['scripts-dirs'][$packageConfig['scripts-dir']] = $package;
+                    $runtimeConfig['scripts-dirs'][$packageConfig['scripts-dir']] = [
+                        "package" => $package,
+                        "packageRelDir" => $path,
+                    ];
                 }
             } else {
                 fprintf(
