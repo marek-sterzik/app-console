@@ -129,7 +129,9 @@ class CommandManager
         if ($binFiles === null) {
             return null;
         }
-        $command = new Command($binFiles[0], $binFiles[1], $name, $package, $this->envVars);
+        $envVars = $this->envVars;
+        $envVars['SPSO_APP_PACKAGE_REL_DIR'] = $dir;
+        $command = new Command($binFiles[0], $binFiles[1], $name, $package, $envVars);
         if (!$command->isInvokable()) {
             $command = null;
         }
