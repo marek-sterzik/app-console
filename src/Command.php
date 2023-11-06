@@ -25,14 +25,24 @@ final class Command
     /** @var array|null */
     private $metadata;
 
-    public function __construct(string $bin, ?string $metadataFile, string $name, string $packageName, array $envVars)
-    {
+    /** @var bool */
+    private $isSymlink;
+
+    public function __construct(
+        string $bin,
+        ?string $metadataFile,
+        string $name,
+        string $packageName,
+        array $envVars,
+        bool $isSymlink
+    ) {
         $this->bin = $bin;
         $this->metadataFile = $metadataFile;
         $this->type = "none";
         $this->name = $name;
         $this->packageName = $packageName;
         $this->envVars = $envVars;
+        $this->isSymlink = $isSymlink;
         $this->metadata = null;
         $this->detectBin();
     }
@@ -59,7 +69,7 @@ final class Command
         if (!$this->isInvokable()) {
             return true;
         }
-        $defaultHidden = (substr($this->name, 0, 1) === '.') ? true : false;
+        $defaultHidden = $this->isSymlink || ((substr($this->name, 0, 1) === '.') ? true : false);
         if ($this->metadata("hidden") ?? $defaultHidden) {
             return true;
         }
