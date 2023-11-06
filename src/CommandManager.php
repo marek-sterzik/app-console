@@ -59,24 +59,40 @@ class CommandManager
         
         /* do the prefix match if required */
         if (empty($commands) && $allowPrefixMatch) {
-            $foundCommand = null;
+            $foundCommands = [];
             foreach ($searchIn as $dir) {
-                $command = BinaryFileMapper::instance()->prefixMatchBin($this->rootDir . "/" . $dir, $name);
-                if ($command !== null) {
-                    if ($foundCommand !== null && $foundCommand !== $command) {
+                $cmds = BinaryFileMapper::instance()->prefixMatchBin($this->rootDir . "/" . $dir, $name);
+                foreach ($cmds as $command) {
+                    if (!isset($foundCommands[$command])) {
+                        $foundCommands[$command] = [];
+                    }
+                    $foundCommands[$command][] = $dir;
+                }
+            }
+            $foundCommand = null;
+            $foundCommandObject = null;
+            $foundDirs = null;
+            foreach ($foundCommands as $command => $dirs) {
+                $commandObject = $this->createCommand(array_shift($dirs), $command, $this->scriptsDirs[$dir]);
+                if ($commandObject !== null && !$commandObject->isHidden()) {
+                    if ($foundCommand !== null) {
                         $foundCommand = null;
+                        $foundCommandObject = null;
+                        $foundDirs = null;
                         break;
                     }
                     $foundCommand = $command;
+                    $foundCommandObject = $commandObject;
+                    $foundDirs = $dirs;
                 }
             }
-            if ($foundCommand !== null) {
-                foreach ($searchIn as $dir) {
-                    $command = $this->createCommand($dir, $foundCommand, $this->scriptsDirs[$dir]);
-                    if ($command !== null && !$command->isHidden()) {
-                        $commands[] = $command;
-                        if ($firstOnly) {
-                            break;
+            if ($foundCommandObject !== null) {
+                $commands[] = $foundCommandObject;
+                if (!$firstOnly) {
+                    foreach ($foundDirs as $dir) {
+                        $command = $this->createCommand($dir, $foundCommand, $this->scriptsDirs[$dir]);
+                        if ($command !== null) {
+                            $commands[] = $command;
                         }
                     }
                 }

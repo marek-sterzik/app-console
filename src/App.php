@@ -53,8 +53,12 @@ class App
         }
 
         $all = $options['all'] ?? false;
-        $list = $options['list'] ?? false;
-        $exitMode = $options['exit-mode'] ?? null;
+        $mode = $options['mode'] ?? null;
+        if ($mode === 'l') {
+            $mode = 'list';
+        }
+
+        $allowPrefixMatch = !$all && $mode === null;
 
         if ($options['__help__'] ?? false) {
             if ($command === null) {
@@ -80,13 +84,15 @@ class App
             return 1;
         }
 
-        $commands = $this->commandManager->getCommands($command, $packages, !$all, !$all);
+        $commands = $this->commandManager->getCommands($command, $packages, !$all, $allowPrefixMatch);
 
-        if ($list) {
-            foreach ($commands as $commandObj) {
-                echo $commandObj->getPackageName() . "\n";
+        if (in_array($mode, ['list', 'test-exists'])) {
+            if ($mode === 'list') {
+                foreach ($commands as $commandObj) {
+                    echo $commandObj->getPackageName() . "\n";
+                }
             }
-            return 0;
+            return empty($commands) ? 1 : 0;
         }
 
         $invokePlugin = $this->commandManager->getSingleCommand(".invoke");
@@ -113,15 +119,15 @@ class App
                     $finalRet = 1;
                 }
             }
-            if ($exitMode === 'abort-on-failure' && $finalRet !== 0) {
+            if ($mode === 'abort-on-failure' && $finalRet !== 0) {
                 break;
             }
-            if ($exitMode === 'exit-on-success' && $finalRet === 0) {
+            if ($mode === 'exit-on-success' && $finalRet === 0) {
                 return 0;
             }
         }
 
-        if ($exitMode === 'exit-on-success') {
+        if ($mode === 'exit-on-success') {
             return 1;
         }
 
@@ -223,8 +229,9 @@ class App
                 'a|all             Run all commands of the given name',
                 'r|reverse         Run the commands in a reverse order',
                 'p|package*        [=pkg]Run only the command from a specific package',
-                'l|list            print packages containing the command to be invoked instead to invoke them directly',
-                'abort-on-failure|exit-on-success{0,1}[exit-mode=@] ' .
+                'abort-on-failure|exit-on-success|l|list|test-exists{0,1}[mode=@] ' .
+                    '[l|list]print packages containing the command to be invoked instead of invoking them' .
+                    '[test-exists]test if the command exists' .
                     '[abort-on-failure]abort multiple command execution in case one fails' .
                     '[exit-on-success]exit when the first command succeeds',
                 '$command?         Command to be called',

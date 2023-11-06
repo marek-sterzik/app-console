@@ -14,14 +14,14 @@ class BinaryFileMapper
         return self::$instance;
     }
 
-    public function prefixMatchBin(string $dir, string $commandPrefix): ?string
+    public function prefixMatchBin(string $dir, string $commandPrefix): array
     {
         $prefixLength = strlen($commandPrefix);
         if ($prefixLength == 0) {
             return null;
         }
 
-        $foundCommand = null;
+        $foundCommands = [];
         $dd = @opendir($dir);
         if ($dd) {
             while (($file = readdir($dd)) !== false) {
@@ -33,15 +33,12 @@ class BinaryFileMapper
                 }
 
                 if (strlen($file) >= $prefixLength && substr($file, 0, $prefixLength) === $commandPrefix) {
-                    if ($foundCommand !== null) {
-                        return null;
-                    }
-                    $foundCommand = $file;
+                    $foundCommands[] = $file;
                 }
             }
             closedir($dd);
         }
-        return $foundCommand;
+        return $foundCommands;
     }
 
     public function filesForBin(string $dir, string $command, bool $includeMetadata = true): ?array
