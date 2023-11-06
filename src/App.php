@@ -13,6 +13,7 @@ class App
     private $config;
     private $commandManager;
     private $formatter;
+    private $quiet;
 
     public function __construct($composerAutoloadPath)
     {
@@ -25,6 +26,15 @@ class App
 
         $this->formatter = new DefaultFormatter();
         $this->formatter->setWidth(120);
+
+        $this->quiet = false;
+    }
+
+    private function message(...$args)
+    {
+        if (!$this->quiet) {
+            fprintf(STDERR, ...$args);
+        }
     }
 
     public function run($argv)
@@ -40,8 +50,8 @@ class App
         try {
             $options = $getopt->parseArgs($argv);
         } catch (Exception $e) {
-            fprintf(STDERR, "Error: Cannot parse options: %s\n", $e->getMessage());
-            fprintf(STDERR, "For help use: %s --help\n", $this->config['argv0']);
+            $this->message("Error: Cannot parse options: %s\n", $e->getMessage());
+            $this->message("For help use: %s --help\n", $this->config['argv0']);
             return 1;
         }
         $command = $options['command'] ?? null;
@@ -54,6 +64,7 @@ class App
 
         $all = $options['all'] ?? false;
         $mode = $options['mode'] ?? null;
+        $this->quiet = $options['quiet'] ?? false;
         if ($mode === 'l') {
             $mode = 'list';
         }
@@ -68,7 +79,7 @@ class App
                 if ($cmd !== null) {
                     $this->printCommandHelp($cmd);
                 } else {
-                    fprintf(STDERR, "Help not available");
+                    $this->message("Help not available\n");
                 }
             }
             return 1;
@@ -105,7 +116,7 @@ class App
         }
 
         if (empty($commands) && !$all) {
-            fprintf(STDERR, "Unknown command: %s\n", $command);
+            $this->message("Error: Unknown command: %s\n", $command);
             return 1;
         }
         
@@ -137,15 +148,15 @@ class App
     private function invokeCommand(Command $command, array $args, ?Command $invokePlugin)
     {
         foreach ($command->getMetadataErrors() as $error) {
-            fprintf(STDERR, "Warning: invalid metadata: %s\n", $error);
+            $this->message("Warning: invalid metadata: %s\n", $error);
         }
 
         $getopt = $this->createCommandGetOpt($command, true);
         try {
             $options = $getopt->parseArgs($args);
         } catch (Exception $e) {
-            fprintf(STDERR, "Error: Cannot parse options: %s\n", $e->getMessage());
-            fprintf(STDERR, "For help use: %s %s --help\n", $this->config['argv0'], $command->getName());
+            $this->message("Error: Cannot parse options: %s\n", $e->getMessage());
+            $this->message("For help use: %s %s --help\n", $this->config['argv0'], $command->getName());
             return 1;
         }
 
@@ -172,7 +183,7 @@ class App
     private function printGlobalHelp()
     {
         $getopt = $this->createGlobalGetOpt();
-        fprintf(STDERR, $getopt->getHelpFormatted($this->formatter)."\n");
+        $this->message($getopt->getHelpFormatted($this->formatter)."\n");
         $commandRows = [];
         foreach ($this->commandManager->getAllCommands() as $commandName => $command) {
             $commandRows[] = [
@@ -182,11 +193,11 @@ class App
         }
         if (empty($commandRows)) {
             $commands = null;
-            fprintf(STDERR, $this->wrapText("No commands are currently registered in the app console."));
+            $this->message($this->wrapText("No commands are currently registered in the app console."));
         } else {
             $table = (new AsciiTable())->column([0, 2])->column()->width($this->formatter->getWidth(true));
             $commands = $table->render($commandRows);
-            fprintf(STDERR, $this->formatter->formatBlock("Available commands:", $commands));
+            $this->message($this->formatter->formatBlock("Available commands:", $commands));
         }
         
     }
@@ -205,17 +216,17 @@ class App
     {
         $description = $command->getDescription();
         $getopt = $this->createCommandGetOpt($command, false);
-        fprintf(STDERR, $getopt->getHelpFormatted($this->formatter));
+        $this->message($getopt->getHelpFormatted($this->formatter));
 
         $help = $command->getHelp();
         if ($help !== null) {
-            fprintf(STDERR, "\n".$this->wrapText($help, "Description:", true));
+            $this->message("\n".$this->wrapText($help, "Description:", true));
         }
     }
 
     private function printVersionInfo(): void
     {
-        fprintf(STDERR, "Error: version info not yet available!\n");
+        $this->message("Error: version info not yet available!\n");
     }
 
     private function getControlOpts(bool $forSubCommand): array
@@ -234,6 +245,7 @@ class App
                     '[test-exists]test if the command exists' .
                     '[abort-on-failure]abort multiple command execution in case one fails' .
                     '[exit-on-success]exit when the first command succeeds',
+                'q|quiet           Suppress internal error messages',
                 '$command?         Command to be called',
                 '$args*            Command arguments',
             ]);
