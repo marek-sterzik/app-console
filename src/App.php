@@ -54,7 +54,7 @@ class App
 
         $all = $options['all'] ?? false;
         $list = $options['list'] ?? false;
-        $abortOnFailure = $options['abort-on-failure'] ?? false;
+        $exitMode = $options['exit-mode'] ?? null;
 
         if ($options['__help__'] ?? false) {
             if ($command === null) {
@@ -113,9 +113,16 @@ class App
                     $finalRet = 1;
                 }
             }
-            if ($abortOnFailure && $finalRet !== 0) {
+            if ($exitMode === 'abort-on-failure' && $finalRet !== 0) {
                 break;
             }
+            if ($exitMode === 'exit-on-success' && $finalRet === 0) {
+                return 0;
+            }
+        }
+
+        if ($exitMode === 'exit-on-success') {
+            return 1;
         }
 
         return $finalRet;
@@ -217,7 +224,9 @@ class App
                 'r|reverse         Run the commands in a reverse order',
                 'p|package*        [=pkg]Run only the command from a specific package',
                 'l|list            print packages containing the command to be invoked instead to invoke them directly',
-                'abort-on-failure  abort multiple command execution in case one fails',
+                'abort-on-failure|exit-on-success{0,1}[exit-mode=@] ' .
+                    '[abort-on-failure]abort multiple command execution in case one fails' .
+                    '[exit-on-success]exit when the first command succeeds',
                 '$command?         Command to be called',
                 '$args*            Command arguments',
             ]);
