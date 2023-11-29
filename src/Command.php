@@ -125,13 +125,7 @@ final class Command
                 $invoker = [];
             }
             $invoker[] = $this->bin;
-            $cmd = escapeshellcmd(array_shift($invoker));
-            foreach (array_merge($invoker, $args) as $arg) {
-                $cmd .= " " . escapeshellarg($arg);
-            }
-            $ret = 1;
-            passthru($cmd, $ret);
-            return $ret;
+            return Run::run(array_merge($invoker, $args));
         } else {
             fprintf(STDERR, "Error: this command is not invokable");
             return 1;
