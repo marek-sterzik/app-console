@@ -10,6 +10,7 @@ class Run
 
     public static function run(...$args): int
     {
+        $args = self::resolveArgs($args);
         if (self::$forkMode === null) {
             self::$forkMode = self::detectForkMode();
         }
@@ -20,14 +21,44 @@ class Run
         }
     }
 
+    public static function exec(...$args): void
+    {
+        $args = self::resolveArgs($args);
+        if (self::$forkMode === null) {
+            self::$forkMode = self::detectForkMode();
+        }
+        if (self::$forkMode) {
+            self::doExec(...$args);
+        } else {
+            $ret = self::runPassthru(...$args);
+            exit($ret);
+        }
+    }
+
     public static function app(...$args): int
     {
         $args = self::resolveArgs($args);
+        return self::runApp(false, $args);
+    }
+
+    public static function appExec(...$args): void
+    {
+        $args = self::resolveArgs($args);
+        self::runApp(true, $args);
+    }
+
+    private static function runApp(bool $exec, array $args): int
+    {
         $app = getenv("SPSO_APP_BIN");
         if (!is_string($app)) {
             throw new Exception("Cannot determine the app-console command");
         }
-        return self::run(...array_merge([$app], $args));
+        $args = array_merge([$app], $args);
+        if ($exec) {
+            self::exec(...$args);
+        } else {
+            return self::run(...$args);
+        }
     }
 
     public static function forkMode(?bool $forkMode = null): bool
@@ -44,7 +75,6 @@ class Run
 
     private static function runPassthru(...$args): int
     {
-        $args = self::resolveArgs($args);
         if (empty($args)) {
             throw new Exception("Running command needs to specify the command name");
         }
@@ -64,7 +94,6 @@ class Run
 
     private static function runFork(...$args): int
     {
-        $args = self::resolveArgs($args);
         if (empty($args)) {
             throw new Exception("Running command needs to specify the command name");
         }
@@ -77,7 +106,7 @@ class Run
             pcntl_waitpid($child, $status);
             return pcntl_wexitstatus($status);
         } else {
-            self::exec(...$args);
+            self::doExec(...$args);
         }
     }
 
@@ -94,9 +123,8 @@ class Run
         return true;
     }
 
-    private static function exec(...$args): void
+    private static function doExec(...$args): void
     {
-        $args = self::resolveArgs($args);
         if (empty($args)) {
             throw new Exception("Command exec needs to specify the command name");
         }
