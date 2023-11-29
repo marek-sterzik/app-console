@@ -209,22 +209,17 @@ final class Command
 
     private function postProcessMetadata(array $plugins, array &$metaData): void
     {
-        $envInitialized = false;
+        $initializeEnv = true;
         foreach ($plugins as $plugin) {
-            $plugin = $this->instantiatePlugin($plugin);
+            $plugin = $this->instantiatePlugin($plugin, $initializeEnv);
             if ($plugin !== null) {
-                if (!$envInitialized) {
-                    foreach ($this->envVars as $var => $value) {
-                        putenv(sprintf("%s=%s", $var, $value));
-                    }
-                    $envInitialized = true;
-                }
+                $initializeEnv = false;
                 $plugin->processMetadata($metaData);
             }
         }
     }
 
-    private function instantiatePlugin($plugin): ?Plugin
+    private function instantiatePlugin($plugin, bool $initializeEnv): ?Plugin
     {
         if (!is_array($plugin)) {
             $plugin = ["plugin" => $plugin];
@@ -249,6 +244,11 @@ final class Command
         }
 
         $pluginClass = $plugin["plugin"];
+        if ($initializeEnv) {
+            foreach ($this->envVars as $var => $value) {
+                putenv(sprintf("%s=%s", $var, $value));
+            }
+        }
         return new $pluginClass(...$plugin["args"]);
     }
 }
