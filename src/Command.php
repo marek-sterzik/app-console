@@ -209,9 +209,16 @@ final class Command
 
     private function postProcessMetadata(array $plugins, array &$metaData): void
     {
+        $envInitialized = false;
         foreach ($plugins as $plugin) {
             $plugin = $this->instantiatePlugin($plugin);
             if ($plugin !== null) {
+                if (!$envInitialized) {
+                    foreach ($this->envVars as $var => $value) {
+                        putenv(sprintf("%s=%s", $var, $value));
+                    }
+                    $envInitialized = true;
+                }
                 $plugin->processMetadata($metaData);
             }
         }
