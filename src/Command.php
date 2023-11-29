@@ -185,6 +185,19 @@ final class Command
 
         $metaData = @json_decode($metaData, true);
 
+        if (is_array($metaData) && isset($metaData['plugins'])) {
+            $plugins = $metaData['plugins'];
+            unset($metaData['plugins']);
+            if (!is_array($plugins)) {
+                if ($plugins === null) {
+                    $plugins = [];
+                } else {
+                    $plugins = [$plugins];
+                }
+            }
+            $this->postProcessMetadata($plugins, $metaData);
+        }
+
         if (!MetaDataChecker::instance()->check($metaData)) {
             $metaData = [];
         }
@@ -192,5 +205,43 @@ final class Command
         $metaData['errors'] = MetaDataChecker::instance()->getLastErrors();
         
         return $metaData;
+    }
+
+    private function postProcessMetadata(array $plugins, array &$metaData): void
+    {
+        foreach ($plugins as $plugin) {
+            $plugin = $this->instantiatePlugin($plugin);
+            if ($plugin !== null) {
+                $plugin->processMetadata($metaData);
+            }
+        }
+    }
+
+    private function instantiatePlugin($plugin): ?Plugin
+    {
+        if (!is_array($plugin)) {
+            $plugin = ["plugin" => $plugin];
+        }
+
+        if (!isset($plugin["args"])) {
+            $plugin["args"] = [];
+        }
+
+        if (!is_array($plugin["args"])) {
+            $plugin["args"] = [$plugin["args"]];
+        }
+
+        $plugin["args"] = array_values($plugin["args"]);
+
+        if (!is_string($plugin["plugin"])) {
+            return null;
+        }
+
+        if (!is_a($plugin["plugin"], Plugin::class, true)) {
+            return null;
+        }
+
+        $pluginClass = $plugin["plugin"];
+        return new $pluginClass(...$plugin["args"]);
     }
 }
