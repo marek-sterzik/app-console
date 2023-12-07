@@ -13,7 +13,7 @@ include $_composer_autoload_path;
 if (in_array(dirname($argv[0]), explode(":", getenv('PATH') ?: ''))) {
     $argv[0] = basename($argv[0]);
 }
-
-$app = new App($_composer_autoload_path);
+$argv0 = array_shift($argv);
+$app = new App($_composer_autoload_path, $argv0);
 exit($app->run($argv));
 

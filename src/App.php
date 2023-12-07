@@ -15,14 +15,14 @@ class App
     private $formatter;
     private $quiet;
 
-    public function __construct($composerAutoloadPath)
+    public function __construct(string $composerAutoloadPath, string $argv0)
     {
         $rootDir = dirname(Path::canonize(dirname($composerAutoloadPath)));
         $this->config = (new RuntimeConfigGenerator())->generateConfig();
         $this->config['rootDir'] = $rootDir;
-        $this->config['argv0'] = null;
+        $this->config['argv0'] = $argv0;
 
-        $this->commandManager = null;
+        $this->commandManager = new CommandManager($this->config);
 
         $this->formatter = new DefaultFormatter();
         $this->formatter->setWidth(120);
@@ -39,13 +39,15 @@ class App
 
     public function run($argv)
     {
-        $this->config['argv0'] = $argv[0];
-        array_shift($argv);
-        
-        $this->commandManager = new CommandManager($this->config);
+        $quiet = $this->quiet;
+        $ret = $this->doRun($argv);
+        $this->quiet = $quiet;
+        return $ret;
+    }
 
+    private function doRun($argv)
+    {
         $getopt = $this->createGlobalGetOpt();
-
 
         try {
             $options = $getopt->parseArgs($argv);
@@ -180,8 +182,17 @@ class App
         return $command->invoke($args, $invoker);
     }
 
+    private function putHelpPlugin(string $helpPlugin): void
+    {
+        try {
+            $this->run(["-q", sprintf(".help-%s", $helpPlugin)]);
+        } catch (Exception $e) {
+        }
+    }
+
     private function printGlobalHelp()
     {
+        $this->putHelpPlugin("prefix");
         $getopt = $this->createGlobalGetOpt();
         $this->message($getopt->getHelpFormatted($this->formatter)."\n");
         $commandRows = [];
@@ -199,7 +210,7 @@ class App
             $commands = $table->render($commandRows);
             $this->message($this->formatter->formatBlock("Available commands:", $commands));
         }
-        
+        $this->putHelpPlugin("suffix");
     }
 
     private function wrapText(?string $text, ?string $caption = null, bool $indent = false): string

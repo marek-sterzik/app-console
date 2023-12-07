@@ -7,7 +7,7 @@ $rootDir = getenv("SPSO_APP_DIR");
 $autoload = $rootDir . "/vendor/autoload.php";
 require_once($autoload);
 
-array_shift($argv);
+$argv0 = array_shift($argv);
 
 if (count($argv) > 1) {
     fprintf(STDERR, "Error: invalid help invocation (maybe a bug?)\n");
@@ -16,7 +16,6 @@ if (count($argv) > 1) {
 $command = $argv[0] ?? null;
 
 $args = [];
-$args[] = getenv("SPSO_APP_ARGV0");
 
 if ($command !== null) {
     $args[] = '--';
@@ -24,5 +23,5 @@ if ($command !== null) {
 }
 $args[] = '--help';
 
-$app = new App($rootDir . "/vendor/composer");
+$app = new App($rootDir . "/vendor/composer", getenv("SPSO_APP_ARGV0"));
 exit($app->run($args));
