@@ -1,15 +1,20 @@
 <?php
 
 namespace SPSOstrov\AppConsole;
+
+use Composer\InstalledVersions as ComposerInstalledVersions;
 use SPSOstrov\GetOpt\Options;
 use SPSOstrov\GetOpt\AsciiTable;
 use SPSOstrov\GetOpt\Formatter;
 use SPSOstrov\GetOpt\DefaultFormatter;
+use SPSOstrov\GetOpt\ArgsLimitsException;
 
 use Exception;
 
 class App
 {
+    const COMPOSER_PACKAGE_NAME = "spsostrov/app-console";
+
     private $config;
     private $commandManager;
     private $formatter;
@@ -154,10 +159,20 @@ class App
         }
 
         $getopt = $this->createCommandGetOpt($command, true);
+        $exception = null;
         try {
             $options = $getopt->parseArgs($args);
+        } catch (ArgsLimitsException $e) {
+            $options = $e->getParsedArgs();
+            if (!($options['__help__'] ?? false)) {
+                $exception = $e;
+            }
         } catch (Exception $e) {
-            $this->message("Error: Cannot parse options: %s\n", $e->getMessage());
+            $exception = $e;
+        }
+
+        if ($exception !== null) {
+            $this->message("Error: Cannot parse options: %s\n", $exception->getMessage());
             $this->message("For help use: %s %s --help\n", $this->config['argv0'], $command->getName());
             return 1;
         }
@@ -182,17 +197,17 @@ class App
         return $command->invoke($args, $invoker);
     }
 
-    private function putHelpPlugin(string $helpPlugin): void
+    private function putPlugin(string $plugin): void
     {
         try {
-            $this->run(["-q", sprintf(".help-%s", $helpPlugin)]);
+            $this->run(["-q", sprintf(".%s", $plugin)]);
         } catch (Exception $e) {
         }
     }
 
     private function printGlobalHelp()
     {
-        $this->putHelpPlugin("prefix");
+        $this->putPlugin("help-prefix");
         $getopt = $this->createGlobalGetOpt();
         $this->message($getopt->getHelpFormatted($this->formatter)."\n");
         $commandRows = [];
@@ -210,7 +225,7 @@ class App
             $commands = $table->render($commandRows);
             $this->message($this->formatter->formatBlock("Available commands:", $commands));
         }
-        $this->putHelpPlugin("suffix");
+        $this->putPlugin("help-suffix");
     }
 
     private function wrapText(?string $text, ?string $caption = null, bool $indent = false): string
@@ -237,7 +252,14 @@ class App
 
     private function printVersionInfo(): void
     {
-        $this->message("Error: version info not yet available!\n");
+        try {
+            $version = ComposerInstalledVersions::getVersion(self::COMPOSER_PACKAGE_NAME);
+        } catch (Exception $e) {
+            $version = null;
+        }
+        $this->putPlugin("version-prefix");
+        $this->message(sprintf("Version of the app console: %s\n", $version ?? 'unknown'));
+        $this->putPlugin("version-suffix");
     }
 
     private function getControlOpts(bool $forSubCommand): array
