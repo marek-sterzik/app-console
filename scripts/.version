@@ -1,0 +1,4 @@
+#!/usr/bin/env php
+<?php
+
+printf("Version of the app console: %s\n", getenv("SPSO_APP_VERSION"));

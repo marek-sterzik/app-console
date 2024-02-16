@@ -1,0 +1,11 @@
+#!/usr/bin/env php
+<?php
+
+use SPSOstrov\AppConsole\App;
+
+$rootDir = getenv("SPSO_APP_DIR");
+$autoload = $rootDir . "/vendor/autoload.php";
+require_once($autoload);
+
+$app = new App($rootDir . "/vendor/composer", getenv("SPSO_APP_ARGV0"));
+exit($app->run(['--version']));

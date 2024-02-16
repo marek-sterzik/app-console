@@ -197,12 +197,14 @@ class App
         return $command->invoke($args, $invoker);
     }
 
-    private function putPlugin(string $plugin): void
+    private function putPlugin(string $plugin): int
     {
         try {
-            $this->run(["-q", sprintf(".%s", $plugin)]);
+            $ret = $this->run(["-q", sprintf(".%s", $plugin)]);
         } catch (Exception $e) {
+            $ret = 1;
         }
+        return $ret;
     }
 
     private function printGlobalHelp()
@@ -257,8 +259,9 @@ class App
         } catch (Exception $e) {
             $version = null;
         }
+        putenv("SPSO_APP_VERSION=" . ($version ?? 'unknown'));
         $this->putPlugin("version-prefix");
-        $this->message(sprintf("Version of the app console: %s\n", $version ?? 'unknown'));
+        $this->putPlugin("version");
         $this->putPlugin("version-suffix");
     }
 

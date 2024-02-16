@@ -1,0 +1,9 @@
+{
+    "description": "display version",
+    "options": [
+    ],
+    "args": [
+    ],
+    "help": "Display application version",
+    "hidden": true
+}
