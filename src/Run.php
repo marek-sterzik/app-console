@@ -122,7 +122,7 @@ class Run
             }
             $cmd .= " " . escapeshellarg((string)$arg);
         }
-        if (self::$stdin === null && !self::$stdout) {
+        if (self::$stdin === null && !self::$captureStdout) {
             $ret = 0;
             if (passthru($cmd, $ret) === false) {
                 $ret = 255;
