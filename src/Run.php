@@ -7,6 +7,12 @@ use Exception;
 class Run
 {
     private static $forkMode = null;
+    private static $stdin = null;
+
+    public static function stdin(?string $stdin): void
+    {
+        self::$stdin = $stdin;
+    }
 
     public static function run(...$args): int
     {
@@ -14,10 +20,12 @@ class Run
         if (self::$forkMode === null) {
             self::$forkMode = self::detectForkMode();
         }
-        if (self::$forkMode) {
+        if (self::$forkMode && self::$stdin === null) {
             return self::runFork(...$args);
         } else {
-            return self::runPassthru(...$args);
+            $ret = self::runPassthru(...$args);
+            self::$stdin = null;
+            return $ret;
         }
     }
 
@@ -26,6 +34,10 @@ class Run
         $args = self::resolveArgs($args);
         if (self::$forkMode === null) {
             self::$forkMode = self::detectForkMode();
+        }
+        if (self::$stdin !== null) {
+            self::$stdin = null;
+            throw new Exception("Cannot exec with stdin set");
         }
         if (self::$forkMode) {
             self::doExec(...$args);
@@ -85,9 +97,28 @@ class Run
             }
             $cmd .= " " . escapeshellarg((string)$arg);
         }
-        $ret = 0;
-        if (passthru($cmd, $ret) === false) {
-            $ret = 255;
+        if (self::$stdin === null) {
+            $ret = 0;
+            if (passthru($cmd, $ret) === false) {
+                $ret = 255;
+            }
+        } else {
+            $descriptorspec = array(
+                0 => ["pipe", "r"],
+            );
+
+            $process = proc_open($cmd, $descriptorspec, $pipes);
+
+            if ($process) {
+
+                fwrite($pipes[0], self::$stdin);
+                fclose($pipes[0]);
+
+                $ret = proc_close($process);
+                $ret = ($ret < 0) ? 255 : $ret;
+            } else {
+                $ret = 255;
+            }
         }
         return $ret;
     }
