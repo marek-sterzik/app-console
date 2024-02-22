@@ -8,10 +8,26 @@ class Run
 {
     private static $forkMode = null;
     private static $stdin = null;
+    private static $stdout = null;
+    private static $captureStdout = false;
 
     public static function stdin(?string $stdin): void
     {
         self::$stdin = $stdin;
+    }
+
+    public static function captureStdout(bool $captureStdout = true): void
+    {
+        self::$captureStdout = $captureStdout;
+    }
+
+    public static function stdout(bool $clear = true): ?string
+    {
+        $ret = static::$stdout;
+        if ($clear) {
+            static::$stdout = null;
+        }
+        return $ret;
     }
 
     public static function run(...$args): int
@@ -20,11 +36,13 @@ class Run
         if (self::$forkMode === null) {
             self::$forkMode = self::detectForkMode();
         }
-        if (self::$forkMode && self::$stdin === null) {
+        self::$stdout = null;
+        if (self::$forkMode && self::$stdin === null && !self::$captureStdout) {
             return self::runFork(...$args);
         } else {
             $ret = self::runPassthru(...$args);
             self::$stdin = null;
+            self::$captureStdout = false;
             return $ret;
         }
     }
@@ -35,9 +53,16 @@ class Run
         if (self::$forkMode === null) {
             self::$forkMode = self::detectForkMode();
         }
+        self::$stdout = null;
         if (self::$stdin !== null) {
             self::$stdin = null;
+            self::$captureStdout = false;
             throw new Exception("Cannot exec with stdin set");
+        }
+        if (self::$captureStdout) {
+            self::$stdin = null;
+            self::$captureStdout = false;
+            throw new Exception("Cannot exec with stdout capture set");
         }
         if (self::$forkMode) {
             self::doExec(...$args);
@@ -97,22 +122,35 @@ class Run
             }
             $cmd .= " " . escapeshellarg((string)$arg);
         }
-        if (self::$stdin === null) {
+        if (self::$stdin === null && !self::$stdout) {
             $ret = 0;
             if (passthru($cmd, $ret) === false) {
                 $ret = 255;
             }
         } else {
-            $descriptorspec = array(
-                0 => ["pipe", "r"],
-            );
+            $descriptorspec = [];
+            if (self::$stdin !== null) {
+                $descriptorspec[0] = ["pipe", "r"];
+            }
+            if (self::$captureStdout) {
+                $descriptorspec[1] = ["pipe", "w"];
+                self::$stdout = "";
+            }
 
             $process = proc_open($cmd, $descriptorspec, $pipes);
 
             if ($process) {
-
-                fwrite($pipes[0], self::$stdin);
-                fclose($pipes[0]);
+                if (self::$stdin !== null) {
+                    fwrite($pipes[0], self::$stdin);
+                    fclose($pipes[0]);
+                }
+                if (self::$captureStdout) {
+                    self::$stdout = @stream_get_contents($pipes[1]);
+                    if (!is_string(self::$stdout)) {
+                        self::$stdout = "";
+                    }
+                    fclose($pipes[1]);
+                }
 
                 $ret = proc_close($process);
                 $ret = ($ret < 0) ? 255 : $ret;
