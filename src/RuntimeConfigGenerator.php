@@ -11,7 +11,7 @@ class RuntimeConfigGenerator
 
     public function generateConfig()
     {
-        $runtimeConfig = ['scripts-dirs' => []];
+        $runtimeConfig = ['scripts-dirs' => [], "argv0" => null];
         $rootDir = Path::canonize($this->getPackagePath("__root__"));
         $packages = array_merge(
             ['__root__'],
@@ -23,12 +23,22 @@ class RuntimeConfigGenerator
             $path = Path::canonize($installPath);
             $path = $this->stripPathPrefix($path, $rootDir);
             if ($path !== null) {
-                $packageConfig = $this->loadDirsFromPackage($rootDir, $path, $package);
+                $packageConfig = $this->loadConfigFromPackage($rootDir, $path, $package);
                 if ($packageConfig['scripts-dir'] !== null) {
                     $runtimeConfig['scripts-dirs'][$packageConfig['scripts-dir']] = [
                         "package" => $package,
                         "packageRelDir" => $path,
                     ];
+                }
+                if ($package === '__root__') {
+                    $argv0 = $packageConfig['argv0'] ?? null;
+                    if (isset($packageConfig['argv0-env'])) {
+                        $argv0FromEnv = @getenv($packageConfig['argv0-env']);
+                        if (is_string($argv0FromEnv)) {
+                            $argv0 = $argv0FromEnv;
+                        }
+                    }
+                    $runtimeConfig["argv0"] = $argv0;
                 }
             } else {
                 fprintf(
@@ -56,7 +66,7 @@ class RuntimeConfigGenerator
         }
     }
 
-    private function loadDirsFromPackage($rootDir, $packageDir, $package)
+    private function loadConfigFromPackage($rootDir, $packageDir, $package)
     {
         $config = $this->loadExtraFromComposerJson($rootDir, $packageDir, $package);
         $config['scripts-dir'] = $this->extractScriptsDir($config);
@@ -158,6 +168,12 @@ class RuntimeConfigGenerator
                     return false;
                 }
             }
+        }
+        if (isset($config['argv0']) && !is_string($config['argv0'])) {
+            return false;
+        }
+        if (isset($config['argv0-env']) && !is_string($config['argv0-env'])) {
+            return false;
         }
         return true;
     }

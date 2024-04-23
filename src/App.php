@@ -25,7 +25,7 @@ class App
         $rootDir = dirname(Path::canonize(dirname($composerAutoloadPath)));
         $this->config = (new RuntimeConfigGenerator())->generateConfig();
         $this->config['rootDir'] = $rootDir;
-        $this->config['argv0'] = $argv0;
+        $this->config['argv0'] = $this->config['argv0'] ?? $argv0;
 
         $this->commandManager = new CommandManager($this->config);
 
