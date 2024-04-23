@@ -26,6 +26,11 @@ class App
         $this->config = (new RuntimeConfigGenerator())->generateConfig();
         $this->config['rootDir'] = $rootDir;
         $this->config['argv0'] = $this->config['argv0'] ?? $argv0;
+        if ($this->config['argv0-resolve-path']) {
+            if (in_array(dirname($this->config['argv0']), explode(":", getenv('PATH') ?: ''))) {
+                $this->config['argv0'] = basename($this->config['argv0']);
+            }
+        }
 
         $this->commandManager = new CommandManager($this->config);
 

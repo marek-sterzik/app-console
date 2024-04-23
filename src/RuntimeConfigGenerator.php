@@ -11,7 +11,7 @@ class RuntimeConfigGenerator
 
     public function generateConfig()
     {
-        $runtimeConfig = ['scripts-dirs' => [], "argv0" => null];
+        $runtimeConfig = ['scripts-dirs' => [], "argv0" => null, "argv0-resolve-path" => true];
         $rootDir = Path::canonize($this->getPackagePath("__root__"));
         $packages = array_merge(
             ['__root__'],
@@ -38,7 +38,8 @@ class RuntimeConfigGenerator
                             $argv0 = $argv0FromEnv;
                         }
                     }
-                    $runtimeConfig["argv0"] = $argv0;
+                    $runtimeConfig['argv0'] = $argv0;
+                    $runtimeConfig['argv0-resolve-path'] = $packageConfig['argv0-resolve-path'] ?? true;
                 }
             } else {
                 fprintf(
@@ -173,6 +174,9 @@ class RuntimeConfigGenerator
             return false;
         }
         if (isset($config['argv0-env']) && !is_string($config['argv0-env'])) {
+            return false;
+        }
+        if (isset($config['argv0-resolve-path']) && !is_bool($config['argv0-resolve-path'])) {
             return false;
         }
         return true;
