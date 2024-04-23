@@ -59,9 +59,7 @@ class RuntimeConfigGenerator
     private function loadDirsFromPackage($rootDir, $packageDir, $package)
     {
         $config = $this->loadExtraFromComposerJson($rootDir, $packageDir, $package);
-        if (!array_key_exists('scripts-dir', $config)) {
-            $config['scripts-dir'] = 'scripts';
-        }
+        $config['scripts-dir'] = $this->extractScriptsDir($config);
         if (is_string($config['scripts-dir'])) {
             $config['scripts-dir'] = Path::canonize(
                 $packageDir . "/" . Path::canonizeRelative($config['scripts-dir'])
@@ -79,6 +77,22 @@ class RuntimeConfigGenerator
             }
         }
         return $config;
+    }
+
+    private function extractScriptsDir(array $config): string
+    {
+        $scriptsDir = $config['scripts-dir'] ?? 'scripts';
+        $scriptsDirEnv = $config['scripts-dir-env'] ?? null;
+        if ($scriptsDirEnv !== null) {
+            $scriptsDirFromEnv = @getenv($scriptsDirEnv);
+            $scriptsDirEnvVariants = $config['scripts-dir-env-variants'] ?? null;
+            if (is_string($scriptsDirFromEnv) &&
+                ($scriptsDirEnvVariants === null || in_array($scriptsDirFromEnv, $scriptsDirEnvVariants))
+            ) {
+                $scriptsDir = $scriptsDirFromEnv;
+            }
+        }
+        return $scriptsDir;
     }
 
     private function loadExtraFromComposerJson($rootDir, $packageDir, $package)
@@ -131,6 +145,19 @@ class RuntimeConfigGenerator
         }
         if (isset($config['scripts-dir']) && !is_string($config['scripts-dir'])) {
             return false;
+        }
+        if (isset($config['scripts-dir-env']) && !is_string($config['scripts-dir-env'])) {
+            return false;
+        }
+        if (isset($config['scripts-dir-env-variants'])) {
+            if (!is_array($config['scripts-dir-env-variants'])) {
+                return false;
+            }
+            foreach ($config['scripts-dir-env-variants'] as $variant) {
+                if (!is_string($variant)) {
+                    return false;
+                }
+            }
         }
         return true;
     }
