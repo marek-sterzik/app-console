@@ -4,7 +4,6 @@ namespace SPSOstrov\AppConsole;
 
 class CommandManager
 {
-    const FORBIDDEN_EXTENSIONS = [".json"];
     private $rootDir;
     private $scriptsDirs;
     private $envVars;
@@ -118,22 +117,6 @@ class CommandManager
         }
         ksort($commands);
         return $commands;
-    }
-
-    private function hasForbiddenExtension($file)
-    {
-        $fl = strlen($file);
-        foreach (self::FORBIDDEN_EXTENSIONS as $ext) {
-            $el = strlen($ext);
-            if ($fl <= $el) {
-                continue;
-            }
-            if (substr($file, $fl - $el, $el) !== $ext) {
-                continue;
-            }
-            return true;
-        }
-        return false;
     }
 
     private function createCommand($dir, $name, $dirConfig)

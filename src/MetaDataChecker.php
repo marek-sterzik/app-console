@@ -16,6 +16,7 @@ class MetaDataChecker
         "is-invoker" => "checkBool",
         "invoker-accepted-params" => "checkInvokerParams",
         "invoker-params" => "checkInvokerParams",
+        "extra" => "checkArray",
     ];
     private static $instance = null;
 
@@ -69,6 +70,17 @@ class MetaDataChecker
         }
         if (!is_string($val)) {
             return false;
+        }
+        return true;
+    }
+
+    private function checkArray(&$val)
+    {
+        if (!is_array($val)) {
+            if ($val !== null) {
+                return false;
+            }
+            $val = [];
         }
         return true;
     }

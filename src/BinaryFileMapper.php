@@ -42,8 +42,8 @@ class BinaryFileMapper
     private function isForbiddenExtension(string $file): bool
     {
         $file = basename($file);
+        $lfile = strlen($file);
         foreach ($this->forbiddenExtensions as $ext) {
-            $lfile = strlen($file);
             $lext = strlen($ext);
             if ($lfile < $lext) {
                 continue;
