@@ -40,6 +40,7 @@ class RuntimeConfigGenerator
                     }
                     $runtimeConfig['argv0'] = $argv0;
                     $runtimeConfig['argv0-resolve-path'] = $packageConfig['argv0-resolve-path'] ?? true;
+                    $runtimeConfig['forbidden-extensions'] = $packageConfig['forbidden-extensions'] ?? [];
                 }
             } else {
                 fprintf(
@@ -178,6 +179,28 @@ class RuntimeConfigGenerator
         }
         if (isset($config['argv0-resolve-path']) && !is_bool($config['argv0-resolve-path'])) {
             return false;
+        }
+        if (
+            isset($config['forbidden-extensions']) &&
+            !$this->validateForbiddenExtensions($config['forbidden-extensions'])
+        ) {
+            return false;
+        }
+        return true;
+    }
+
+    private function validateForbiddenExtensions(&$value): bool
+    {
+        if (!is_array($value)) {
+            $value = [$value];
+        }
+        foreach ($value as &$ext) {
+            if (!is_string($ext) || $ext === "") {
+                return false;
+            }
+            if (substr($ext, 0, 1) !== '.') {
+                $ext = "." . $ext;
+            }
         }
         return true;
     }

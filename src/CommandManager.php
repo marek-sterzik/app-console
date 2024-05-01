@@ -8,6 +8,7 @@ class CommandManager
     private $rootDir;
     private $scriptsDirs;
     private $envVars;
+    private $binaryFileMapper;
     
     public function __construct(array $config)
     {
@@ -21,6 +22,7 @@ class CommandManager
         if (isset($config['argv0'])) {
             $this->envVars["SPSO_APP_ARGV0"] = $config['argv0'];
         }
+        $this->binaryFileMapper = new BinaryFileMapper($config);
     }
 
     public function getSingleCommand(
@@ -61,7 +63,7 @@ class CommandManager
         if (empty($commands) && $allowPrefixMatch) {
             $foundCommands = [];
             foreach ($searchIn as $dir) {
-                $cmds = BinaryFileMapper::instance()->prefixMatchBin($this->rootDir . "/" . $dir, $name);
+                $cmds = $this->binaryFileMapper->prefixMatchBin($this->rootDir . "/" . $dir, $name);
                 foreach ($cmds as $command) {
                     if (!isset($foundCommands[$command])) {
                         $foundCommands[$command] = [];
@@ -106,7 +108,7 @@ class CommandManager
     {
         $commands = [];
         foreach ($this->scriptsDirs as $dir => $dirConfig) {
-            $names = BinaryFileMapper::instance()->listCommandsInDir($this->rootDir . "/" . $dir);
+            $names = $this->binaryFileMapper->listCommandsInDir($this->rootDir . "/" . $dir);
             foreach ($names as $name) {
                 $command = $this->createCommand($dir, $name, $dirConfig);
                 if ($command !== null && ($includeHidden || !$command->isHidden())) {
@@ -138,7 +140,7 @@ class CommandManager
     {
         $dir = $this->rootDir . "/" . $dir;
         $fullDir = Path::canonize($dir);
-        $binFiles = BinaryFileMapper::instance()->filesForBin($dir, $name);
+        $binFiles = $this->binaryFileMapper->filesForBin($dir, $name);
         if ($binFiles === null) {
             return null;
         }

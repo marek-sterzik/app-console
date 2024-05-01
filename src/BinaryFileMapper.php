@@ -4,14 +4,12 @@ namespace SPSOstrov\AppConsole;
 
 class BinaryFileMapper
 {
-    private static $instance = null;
+    private $forbiddenExtensions;
 
-    public static function instance(): self
+    public function __construct(array $config)
     {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance;
+        $this->forbiddenExtensions = array_merge([".json"], $config['forbidden-extensions'] ?? []);
+        var_dump($config);
     }
 
     public function prefixMatchBin(string $dir, string $commandPrefix): array
@@ -28,7 +26,7 @@ class BinaryFileMapper
                 if ($file === '.' || $file === '..' || $file === '') {
                     continue;
                 }
-                if (preg_match('/\.json$/', $file)) {
+                if ($this->isForbiddenExtension($file)) {
                     continue;
                 }
 
@@ -41,9 +39,25 @@ class BinaryFileMapper
         return $foundCommands;
     }
 
+    private function isForbiddenExtension(string $file): bool
+    {
+        $file = basename($file);
+        foreach ($this->forbiddenExtensions as $ext) {
+            $lfile = strlen($file);
+            $lext = strlen($ext);
+            if ($lfile < $lext) {
+                continue;
+            }
+            if (substr($file, $lfile - $lext, $lext) === $ext) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function filesForBin(string $dir, string $command, bool $includeMetadata = true): ?array
     {
-        if ($command === '' || strpos($command, '/') !== false || preg_match('/\.json$/', $command)) {
+        if ($command === '' || strpos($command, '/') !== false || $this->isForbiddenExtension($command)) {
             return null;
         }
         $bin = $dir . "/" . $command;
