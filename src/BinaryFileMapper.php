@@ -9,7 +9,6 @@ class BinaryFileMapper
     public function __construct(array $config)
     {
         $this->forbiddenExtensions = array_merge([".json"], $config['forbidden-extensions'] ?? []);
-        var_dump($config);
     }
 
     public function prefixMatchBin(string $dir, string $commandPrefix): array
