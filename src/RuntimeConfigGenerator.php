@@ -39,6 +39,7 @@ class RuntimeConfigGenerator
                         }
                     }
                     $runtimeConfig['argv0'] = $argv0;
+                    $runtimeConfig['gnu-mode-opts'] = $packageConfig['gnu-mode-opts'] ?? false;
                     $runtimeConfig['argv0-resolve-path'] = $packageConfig['argv0-resolve-path'] ?? true;
                     $runtimeConfig['forbidden-extensions'] = $packageConfig['forbidden-extensions'] ?? [];
                 }
@@ -184,6 +185,10 @@ class RuntimeConfigGenerator
             isset($config['forbidden-extensions']) &&
             !$this->validateForbiddenExtensions($config['forbidden-extensions'])
         ) {
+            return false;
+        }
+
+        if (isset($config['gnu-mode-opts']) && !is_bool($config['gnu-mode-opts'])) {
             return false;
         }
         return true;

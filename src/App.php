@@ -294,9 +294,15 @@ class App
         return $options;
     }
 
+    private function getGnuMode(): bool
+    {
+        return $this->config['gnu-mode-opts'];
+    }
+
     private function createGlobalGetOpt(): Options
     {
         $options = new Options($this->getControlOpts(false));
+        $options->setGnuMode(false);
         $options->setArgv0($this->config['argv0']);
         return $options;
     }
@@ -306,6 +312,7 @@ class App
         $options = $command->getOptions();
         $strictMode = empty($options) ? false : true;
         $options = new Options($options);
+        $options->setGnuMode($this->getGnuMode());
         $options->setStrictMode($strictMode);
         $options->setArgv0($this->config['argv0'] . " " . $command->getName());
         if ($mergeControl) {
