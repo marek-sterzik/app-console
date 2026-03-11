@@ -198,7 +198,7 @@ class App
         }
 
         if ($this->config['json-args-env']) {
-            putenv("SPSO_ARGS_JSON=" . json_encode($args));
+            putenv("SPSO_ARGS_JSON=" . json_encode($options));
         }
         $args = $command->transformArguments($options, $args);
 
