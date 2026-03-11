@@ -130,7 +130,7 @@ class CommandManager
         $envVars = $this->envVars;
         $envVars['SPSO_APP_PACKAGE_REL_DIR'] = $dirConfig['packageRelDir'];
         $command = new Command($binFiles[0], $binFiles[1], $name, $dirConfig['package'], $envVars, $binFiles[2]);
-        if (!$command->isInvokable()) {
+        if (!$command->isValid()) {
             $command = null;
         }
         return $command;

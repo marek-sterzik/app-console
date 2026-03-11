@@ -25,24 +25,33 @@ class BinaryFileMapper
                 if ($file === '.' || $file === '..' || $file === '') {
                     continue;
                 }
-                if ($this->isForbiddenExtension($file)) {
-                    continue;
+                $commandFound = null;
+                if ($this->hasExtensions($file, [".json"])) {
+                    $foundCommand = substr($file, 0, -5);
+                } elseif (!$this->isForbiddenExtension($file)) {
+                    if (strlen($file) >= $prefixLength && substr($file, 0, $prefixLength) === $commandPrefix) {
+                        $commandFound = $file;
+                    }
                 }
-
-                if (strlen($file) >= $prefixLength && substr($file, 0, $prefixLength) === $commandPrefix) {
-                    $foundCommands[] = $file;
+                if ($commandFound !== null) {
+                    $foundCommands[$commandFound] = true;
                 }
             }
             closedir($dd);
         }
-        return $foundCommands;
+        return array_keys($foundCommands);
     }
 
     private function isForbiddenExtension(string $file): bool
     {
+        return $this->hasExtensions($file, $this->forbiddenExtensions);
+    }
+
+    private function hasExtensions(string $file, array $extensions): bool
+    {
         $file = basename($file);
         $lfile = strlen($file);
-        foreach ($this->forbiddenExtensions as $ext) {
+        foreach ($extensions as $ext) {
             $lext = strlen($ext);
             if ($lfile < $lext) {
                 continue;
@@ -54,19 +63,23 @@ class BinaryFileMapper
         return false;
     }
 
+
     public function filesForBin(string $dir, string $command, bool $includeMetadata = true): ?array
     {
         if ($command === '' || strpos($command, '/') !== false || $this->isForbiddenExtension($command)) {
             return null;
         }
         $bin = $dir . "/" . $command;
+        $metadataFile = $dir . "/" . $command . ".json";
         if (!file_exists($bin)) {
-            return null;
+            if (!file_exists($metadataFile)) {
+                return null;
+            }
+            $bin = null;
         }
         if (!$includeMetadata) {
             return [$bin];
         }
-        $metadataFile = $bin . ".json";
         $symlink = false;
         if (!file_exists($metadataFile)) {
             $metadataFile = $this->findMetadataBySymlink($dir, $command, $symlink);
@@ -115,13 +128,17 @@ class BinaryFileMapper
                 if ($file === '.' || $file === '..' || $file === '') {
                     continue;
                 }
+                if ($this->hasExtensions($file, [".json"])) {
+                    $file = substr($file, 0, -5);
+                }
                 if ($this->filesForBin($dir, $file, false) === null) {
                     continue;
                 }
-                $commands[] = $file;
+                $commands[$file] = true;
             }
             closedir($dd);
         }
+        $commands = array_keys($commands);
         sort($commands);
         return $commands;
     }

@@ -29,7 +29,7 @@ final class Command
     private $isSymlink;
 
     public function __construct(
-        string $bin,
+        ?string $bin,
         ?string $metadataFile,
         string $name,
         string $packageName,
@@ -49,7 +49,9 @@ final class Command
 
     private function detectBin(): void
     {
-        if (file_exists($this->bin) && is_executable($this->bin)) {
+        if ($this->bin === null) {
+            $this->type = "virtual";
+        } else if (file_exists($this->bin) && is_executable($this->bin)) {
             $this->type = "normal";
         }
     }
@@ -59,6 +61,11 @@ final class Command
         return $this->packageName;
     }
 
+    public function isValid(): bool
+    {
+        return in_array($this->type, ['normal', 'virtual']);
+    }
+
     public function isInvokable(): bool
     {
         return in_array($this->type, ['normal']);
@@ -66,7 +73,7 @@ final class Command
 
     public function isHidden(): bool
     {
-        if (!$this->isInvokable()) {
+        if (!$this->isValid()) {
             return true;
         }
         $defaultHidden = $this->isSymlink || ((substr($this->name, 0, 1) === '.') ? true : false);
@@ -127,8 +134,13 @@ final class Command
             $invoker[] = $this->bin;
             return Run::run(array_merge($invoker, $args));
         } else {
-            fprintf(STDERR, "Error: this command is not invokable");
-            return 1;
+            if ($invoker !== null) {
+                $invoker[] = $this->name;
+                return Run::run(array_merge($invoker, $args));
+            } else {
+                fprintf(STDERR, "Error: this command is not invokable (missing binary file?)\n");
+                return 1;
+            }
         }
     }
 
