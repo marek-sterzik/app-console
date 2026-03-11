@@ -197,9 +197,16 @@ class App
             $invoker = $invokePlugin->getInvokerBinary($command);
         }
 
+        if ($this->config['json-args-env']) {
+            putenv("SPSO_ARGS_JSON=" . json_encode($args));
+        }
         $args = $command->transformArguments($options, $args);
 
-        return $command->invoke($args, $invoker);
+        $ret = $command->invoke($args, $invoker);
+        if ($this->config['json-args-env']) {
+            putenv("SPSO_ARGS_JSON");
+        }
+        return $ret;
     }
 
     private function putPlugin(string $plugin): int

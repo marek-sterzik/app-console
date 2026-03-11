@@ -11,7 +11,12 @@ class RuntimeConfigGenerator
 
     public function generateConfig()
     {
-        $runtimeConfig = ['scripts-dirs' => [], "argv0" => null, "argv0-resolve-path" => true];
+        $runtimeConfig = [
+            'scripts-dirs' => [],
+            "argv0" => null,
+            "argv0-resolve-path" => true,
+            "json-args-env" => false,
+        ];
         $rootDir = Path::canonize($this->getPackagePath("__root__"));
         $packages = array_merge(
             ['__root__'],
@@ -29,6 +34,9 @@ class RuntimeConfigGenerator
                         "package" => $package,
                         "packageRelDir" => $path,
                     ];
+                }
+                if ($packageConfig['json-args-env'] ?? false) {
+                    $runtimeConfig['json-args-env'] = true;
                 }
                 if ($package === '__root__') {
                     $argv0 = $packageConfig['argv0'] ?? null;
@@ -189,6 +197,10 @@ class RuntimeConfigGenerator
         }
 
         if (isset($config['gnu-mode-opts']) && !is_bool($config['gnu-mode-opts'])) {
+            return false;
+        }
+
+        if (isset($config['json-args-env']) && !is_bool($config['json-args-env'])) {
             return false;
         }
         return true;
