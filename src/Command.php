@@ -125,23 +125,32 @@ final class Command
     public function invoke(array $args, ?array $invoker): int
     {
         if ($this->isInvokable()) {
-            foreach ($this->envVars as $var => $value) {
-                putenv(sprintf("%s=%s", $var, $value));
-            }
             if ($invoker === null) {
                 $invoker = [];
             }
             $invoker[] = $this->bin;
-            return Run::run(array_merge($invoker, $args));
+            return $this->invokeCommand(array_merge($invoker, $args));
         } else {
             if ($invoker !== null) {
                 $invoker[] = $this->name;
-                return Run::run(array_merge($invoker, $args));
+                return $this->invokeCommand(array_merge($invoker, $args));
             } else {
                 fprintf(STDERR, "Error: this command is not invokable (missing binary file?)\n");
                 return 1;
             }
         }
+    }
+
+    private function invokeCommand(array $command): int
+    {
+        foreach ($this->envVars as $var => $value) {
+            putenv(sprintf("%s=%s", $var, $value));
+        }
+        $ret = Run::run($command);
+        foreach ($this->envVars as $var => $value) {
+            putenv($var);
+        }
+        return $ret;
     }
 
     public function getHelp(): ?string
